@@ -7,6 +7,9 @@
 #-----------------------------------------------------------------------------
 #
 # CHANGELOG
+# 0.4.0b - 08.02.2011
+#		 * TT::Progressbar support.
+#
 # 0.3.0b - 21.12.2010
 #		 * Renamed 'Mesh From Bitmap' to 'Mesh From Heightmap'
 #		 * Added new 'Mesh From Bitmap'

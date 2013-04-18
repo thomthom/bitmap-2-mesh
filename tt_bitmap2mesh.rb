@@ -1,0 +1,49 @@
+#-------------------------------------------------------------------------------
+#
+# Thomas Thomassen
+# thomas[at]thomthom[dot]net
+#
+#-------------------------------------------------------------------------------
+
+require 'sketchup.rb'
+require 'extensions.rb'
+
+#-------------------------------------------------------------------------------
+
+module TT
+ module Plugins
+  module BitmapToMesh
+  
+  ### CONSTANTS ### ------------------------------------------------------------
+  
+  # Plugin information
+  PLUGIN_ID       = File.basename( __FILE__ ).freeze
+  PLUGIN_NAME     = 'Bitmap to Mesh'.freeze
+  PLUGIN_VERSION  = '0.5.0'.freeze
+  
+  # Resource paths
+  PATH_ROOT   = File.dirname( __FILE__ ).freeze
+  PATH        = File.join( PATH_ROOT, PLUGIN_ID ).freeze
+  
+  
+  ### EXTENSION ### ------------------------------------------------------------
+  
+  unless file_loaded?( __FILE__ )
+    loader = File.join( PATH, 'core.rb' )
+    ex = SketchupExtension.new( PLUGIN_NAME, loader )
+    ex.description = 'Generates 2D and 3D mesh from bitmaps.'
+    ex.version     = PLUGIN_VERSION
+    ex.copyright   = 'Thomas Thomassen © 2010-2013'
+    ex.creator     = 'Thomas Thomassen (thomas@thomthom.net)'
+    Sketchup.register_extension( ex, true )
+  end
+  
+  end # module BitmapToMesh
+ end # module Plugins
+end # module TT
+
+#-------------------------------------------------------------------------------
+
+file_loaded( __FILE__ )
+
+#-------------------------------------------------------------------------------

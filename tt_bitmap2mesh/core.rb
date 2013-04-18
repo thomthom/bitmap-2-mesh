@@ -1,27 +1,35 @@
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 #
 # Thomas Thomassen
 # thomas[at]thomthom[dot]net
-# Copyright 2010
 #
-#-----------------------------------------------------------------------------
-#
-# CHANGELOG
-# 0.4.0b - 08.02.2011
-#		 * TT::Progressbar support.
-#
-# 0.3.0b - 21.12.2010
-#		 * Renamed 'Mesh From Bitmap' to 'Mesh From Heightmap'
-#		 * Added new 'Mesh From Bitmap'
-#
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 require 'sketchup.rb'
-require 'TT_Lib2/core.rb'
+require 'langhandler.rb'
+begin
+  require 'TT_Lib2/core.rb'
+rescue LoadError => e
+  module TT
+    if @lib2_update.nil?
+      url = 'http://www.thomthom.net/software/sketchup/tt_lib2/errors/not-installed'
+      options = {
+        :dialog_title => 'TT_Lib² Not Installed',
+        :scrollable => false, :resizable => false, :left => 200, :top => 200
+      }
+      w = UI::WebDialog.new( options )
+      w.set_size( 500, 300 )
+      w.set_url( "#{url}?plugin=#{File.basename( __FILE__ )}" )
+      w.show
+      @lib2_update = w
+    end
+  end
+end
 
-TT::Lib.compatible?('2.5.0', 'TT BitmapToMesh')
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+if defined?( TT::Lib ) && TT::Lib.compatible?( '2.7.0', 'Bitmap to Mesh' )
 
 module TT::Plugins::BitmapToMesh
   
@@ -32,7 +40,7 @@ module TT::Plugins::BitmapToMesh
   
   ### MENU & TOOLBARS ### --------------------------------------------------
   
-  unless file_loaded?( File.basename(__FILE__) )
+  unless file_loaded?( __FILE__ )
     m = TT.menu('Draw')
     m.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool() }
     
@@ -664,14 +672,40 @@ module TT::Plugins::BitmapToMesh
 
   ### DEBUG ### ------------------------------------------------------------  
   
-  def self.reload
+  # @note Debug method to reload the plugin.
+  #
+  # @example
+  #   TT::Plugins::AxesTools.reload
+  #
+  # @param [Boolean] tt_lib Reloads TT_Lib2 if +true+.
+  #
+  # @return [Integer] Number of files reloaded.
+  # @since 1.0.0
+  def self.reload( tt_lib = false )
+    original_verbose = $VERBOSE
+    $VERBOSE = nil
+    TT::Lib.reload if tt_lib
+    # Core file (this)
     load __FILE__
+    # Supporting files
+    if defined?( PATH ) && File.exist?( PATH )
+      x = Dir.glob( File.join(PATH, '*.{rb,rbs}') ).each { |file|
+        load file
+      }
+      x.length + 1
+    else
+      1
+    end
+  ensure
+    $VERBOSE = original_verbose
   end
   
-end # module TT::Plugins::BitmapToMesh
+end # module
 
-#-----------------------------------------------------------------------------
+end # if TT_Lib
 
-file_loaded( File.basename(__FILE__) )
+#-------------------------------------------------------------------------------
 
-#-----------------------------------------------------------------------------
+file_loaded( __FILE__ )
+
+#-------------------------------------------------------------------------------

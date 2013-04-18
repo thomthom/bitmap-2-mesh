@@ -6,7 +6,6 @@
 #-------------------------------------------------------------------------------
 
 require 'sketchup.rb'
-require 'langhandler.rb'
 begin
   require 'TT_Lib2/core.rb'
 rescue LoadError => e

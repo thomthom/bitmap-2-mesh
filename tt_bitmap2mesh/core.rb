@@ -674,7 +674,7 @@ module TT::Plugins::BitmapToMesh
   # @note Debug method to reload the plugin.
   #
   # @example
-  #   TT::Plugins::AxesTools.reload
+  #   TT::Plugins::BitmapToMesh.reload
   #
   # @param [Boolean] tt_lib Reloads TT_Lib2 if +true+.
   #

@@ -13,22 +13,22 @@ require 'extensions.rb'
 module TT
  module Plugins
   module BitmapToMesh
-  
+
   ### CONSTANTS ### ------------------------------------------------------------
-  
+
   # Plugin information
   PLUGIN_ID       = File.basename( __FILE__ ).freeze
   PLUGIN_NAME     = 'Bitmap to Mesh'.freeze
   PLUGIN_VERSION  = '0.5.1'.freeze
-  
+
   # Resource paths
   FILENAMESPACE = File.basename( __FILE__, '.rb' )
   PATH_ROOT     = File.dirname( __FILE__ ).freeze
   PATH          = File.join( PATH_ROOT, FILENAMESPACE ).freeze
-  
-  
+
+
   ### EXTENSION ### ------------------------------------------------------------
-  
+
   unless file_loaded?( __FILE__ )
     loader = File.join( PATH, 'core.rb' )
     ex = SketchupExtension.new( PLUGIN_NAME, loader )
@@ -38,7 +38,7 @@ module TT
     ex.creator     = 'Thomas Thomassen (thomas@thomthom.net)'
     Sketchup.register_extension( ex, true )
   end
-  
+
   end # module BitmapToMesh
  end # module Plugins
 end # module TT

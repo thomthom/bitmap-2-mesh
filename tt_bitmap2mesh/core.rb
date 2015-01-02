@@ -5,7 +5,6 @@
 #
 #-------------------------------------------------------------------------------
 
-require 'sketchup.rb'
 begin
   require 'TT_Lib2/core.rb'
 rescue LoadError => e
@@ -31,18 +30,13 @@ end
 if defined?( TT::Lib ) && TT::Lib.compatible?( '2.7.0', 'Bitmap to Mesh' )
 
 module TT::Plugins::BitmapToMesh
-  
-  ### CONSTANTS ### --------------------------------------------------------
-  
-  VERSION = '0.4.0'
-  
-  
+
   ### MENU & TOOLBARS ### --------------------------------------------------
-  
+
   unless file_loaded?( __FILE__ )
     m = TT.menu('Draw')
     m.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool() }
-    
+
     UI.add_context_menu_handler { |context_menu|
       sel = Sketchup.active_model.selection
       if sel.length == 1 && sel[0].is_a?( Sketchup::Image )
@@ -50,12 +44,12 @@ module TT::Plugins::BitmapToMesh
         context_menu.add_item('Mesh From Bitmap')     { self.image_to_mesh }
       end
     }
-  end 
-  
-  
+  end
+
+
   ### MAIN SCRIPT ### ------------------------------------------------------
-  
-  
+
+
   def self.image_to_mesh
     temp_path = File.expand_path( TT::System.temp_path )
     temp_file = File.join( temp_path, 'TT_BMP2Mesh.bmp' )
@@ -66,7 +60,7 @@ module TT::Plugins::BitmapToMesh
     tw.write( image, temp_file )
     dib = GL_BMP.new( temp_file )
     File.delete( temp_file )
-    
+
     size_x = image.width / image.pixelwidth
     size_y = image.height / image.pixelheight
     model.start_operation('Mesh From Bitmap', true)
@@ -97,8 +91,8 @@ module TT::Plugins::BitmapToMesh
       }
     model.commit_operation
   end
-  
-  
+
+
   # (!) Doesn't handle flipped images correctly.
   def self.image_transformation(image)
     origin = image.origin
@@ -112,10 +106,10 @@ module TT::Plugins::BitmapToMesh
     tr[14] = origin.z
     return Geom::Transformation.new(tr)
   end
-  
-  
-  
-  
+
+
+
+
   #def self.image_to_mesh
   def self.heightmap_to_mesh
     temp_path = File.expand_path( TT::System.temp_path )
@@ -129,8 +123,8 @@ module TT::Plugins::BitmapToMesh
     File.delete( temp_file )
     Sketchup.active_model.tools.push_tool( PlaceMeshTool.new(dib, image) )
   end
-  
-  
+
+
   def self.bitmap_to_mesh_tool
     # Select file
     filename = UI.openpanel('Select BMP File', nil, '*.bmp')
@@ -141,41 +135,41 @@ module TT::Plugins::BitmapToMesh
     Sketchup.active_model.tools.push_tool( PlaceMeshTool.new(dib) )
   end
 
-  
+
   class PlaceMeshTool
-    
+
     S_START = 0
     S_RECT  = 1
     S_BOX   = 2
-    
+
     def initialize( dib, image = nil )
       @dib = dib
       @ratio = dib.width.to_f / dib.height.to_f
-      
+
       @ip_start = Sketchup::InputPoint.new
       @ip_rect  = Sketchup::InputPoint.new
       @ip_mouse = Sketchup::InputPoint.new
-      
+
       @image = image
     end
-    
+
     def enableVCB?
       true
     end
-    
+
     def activate
       reset()
     end
-    
+
     def reset
       @ip_start.clear
       @ip_rect.clear
       @ip_mouse.clear
-      
+
       @ph = nil
-      
+
       @state = S_START
-      
+
       if @image
         @ip_start = Sketchup::InputPoint.new( @image.origin )
         pt = @image.origin.offset( @image.normal.axes.x, @image.width )
@@ -183,10 +177,10 @@ module TT::Plugins::BitmapToMesh
         @ip_rect = Sketchup::InputPoint.new( pt )
         @state = S_BOX
       end
-      
+
       update_ui()
     end
-    
+
     def update_ui
       case @state
       when S_START
@@ -205,20 +199,20 @@ module TT::Plugins::BitmapToMesh
         Sketchup.vcb_value = pts[0].distance( pts[4] )
       end
     end
-    
+
     def deactivate(view)
       view.invalidate
     end
-    
+
     def resume(view)
       view.invalidate
     end
-    
+
     def onCancel(reason, view)
       reset()
       view.invalidate
     end
-    
+
     def onUserText(text, view)
       length = text.to_l
       return if length == 0
@@ -246,7 +240,7 @@ module TT::Plugins::BitmapToMesh
       update_ui()
       view.invalidate
     end
-    
+
     def onMouseMove(flags, x, y, view)
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
@@ -255,7 +249,7 @@ module TT::Plugins::BitmapToMesh
       view.invalidate
       update_ui()
     end
-    
+
     def onLButtonUp(flags, x, y, view)
       case @state
       when S_START
@@ -278,16 +272,16 @@ module TT::Plugins::BitmapToMesh
       view.invalidate
       update_ui()
     end
-    
+
     def draw(view)
       @ip_mouse.draw(view) if @ip_mouse.valid?
 
       view.line_width = 2
       view.line_stipple = ''
       view.drawing_color = [255,0,0]
-      
+
       box = get_box
-      
+
       #if @state == S_START
       #  bp = @ph.best_picked
       #  if bp.is_a?( Sketchup::Image )
@@ -300,14 +294,14 @@ module TT::Plugins::BitmapToMesh
       #    view.draw( GL_LINE_LOOP, rect )
       #  end
       #end
-      
+
       if @state == S_RECT || @state == S_BOX
         view.draw( GL_LINE_LOOP, box[0..3] )
       end
-      
+
       if @state == S_BOX
         view.draw( GL_LINE_LOOP, box[4..7] )
-        
+
         connectors = [
           box[0], box[4],
           box[1], box[5],
@@ -317,7 +311,7 @@ module TT::Plugins::BitmapToMesh
         view.draw( GL_LINES, connectors )
       end
     end
-    
+
     def getExtents
       bb = Geom::BoundingBox.new
       pts = get_box()
@@ -326,7 +320,7 @@ module TT::Plugins::BitmapToMesh
       }
       bb
     end
-    
+
     def get_box
       pts = []
       if @state == S_RECT || @state == S_BOX
@@ -342,20 +336,20 @@ module TT::Plugins::BitmapToMesh
           vz = (face) ? face.normal.axes.z : Z_AXIS
           plane = (face) ? face.plane : [ORIGIN, Z_AXIS]
         end
-        
+
         ip2 = (@state == S_RECT) ? @ip_mouse : @ip_rect
-        
+
         pt1 = @ip_start.position
         pt2 = ip2.position.project_to_line( [pt1, vx] )
         width = pt1.distance( pt2 )
         height = width / @ratio
         pt3 = pt2.offset( vy, height )
         pt4 = pt1.offset( vy, height )
-        
+
         rect_lower = [pt1, pt2, pt3, pt4]
         pts.concat( rect_lower )
       end
-      
+
       if @state == S_BOX
         mp = @ip_mouse.position
         pt5 = mp.project_to_line( [pt1, vz] )
@@ -363,13 +357,13 @@ module TT::Plugins::BitmapToMesh
         pt6 = pt2.offset( depth )
         pt7 = pt3.offset( depth )
         pt8 = pt4.offset( depth )
-        
+
         rect_upper = [pt5, pt6, pt7, pt8]
         pts.concat( rect_upper )
       end
       pts
     end
-    
+
     def generate_mesh
       box = get_box()
       xaxis = box[0].vector_to( box[1] )
@@ -386,7 +380,7 @@ module TT::Plugins::BitmapToMesh
       Sketchup.active_model.commit_operation
       Sketchup.active_model.tools.pop_tool
     end
-    
+
     def bitmap_to_mesh(dib, width, height, depth)
       model = Sketchup.active_model
       # Dimensions
@@ -459,23 +453,23 @@ module TT::Plugins::BitmapToMesh
       puts "Total time: #{Time.now - start_time}s"
       group
     end
-  
-  end # class PlaceMeshTool  
-  
+
+  end # class PlaceMeshTool
+
 
   # :data must be a hash where the key is a colour and the values are array of points. This way the
   # image data is drawn in the most efficient manner using the SketchUp API availible.
   module GL_DIB
     attr_accessor(:width, :height, :data)
-    
+
     def initialize(filename)
       @data = read_image(filename)
     end
-    
+
     def pixels
       @width * @height
     end
-    
+
   end # module GL_DIB
 
   # Supported BMP variants:
@@ -484,7 +478,7 @@ module TT::Plugins::BitmapToMesh
   # * Compression: BI_RGB (none)
   class GL_BMP
     include GL_DIB
-    
+
     # http://en.wikipedia.org/wiki/BMP_file_format
     #
     # http://www.herdsoft.com/ti/davincie/imex3j8i.htm
@@ -520,23 +514,23 @@ module TT::Plugins::BitmapToMesh
     BI_BITFIELDS = 3
     BI_JPEG      = 4
     BI_PNG       = 5
-    
+
     # This method silently fails when encountering errors. The error message is sent to the
     # console.
     #
     # Returns array of each pixel ( Array<Point3d, color> )
     def read_image(filename)
       #puts "\nReading BMP: '#{File.basename(filename)}' ..."
-      
+
       file = File.open(filename, 'rb')
-      
+
       # BMP File Header
       bmp_magic = file.read(2)
       raise 'BMP Magic Marker not found.' if bmp_magic != 'BM'
       bmp_header = file.read(12).unpack('VvvV')
         filesz, creator1, creator2, bmp_offset = bmp_header
-        
-      
+
+
       # DIB Header
       # Read the first uint32_t that gives the size of the DIB header and use that to determine
       # which DIB header this BMP uses.
@@ -563,12 +557,12 @@ module TT::Plugins::BitmapToMesh
         raise "Unknown DIB Header. (Size: #{header_sz})"
       end
       #puts dib_header.inspect
-      
+
       # Verify the supported compression
       unless compress_type.nil? || compress_type == BI_RGB
         raise "Unsupported Compression Type. (type: #{compress_type})"
       end
-      
+
       # Color Palette
       if bitspp < 16
         palette = []
@@ -596,14 +590,14 @@ module TT::Plugins::BitmapToMesh
         }
         #puts palette.inspect
       end
-      
+
       # Bitmap Data
       #data = Hash.new { |hash, key| hash[key] = [] }
       data = []
       row = y = x = 0
       r, g, b, a, c, n = nil
       while row < @height.abs
-        # Row order is flipped if @height is negative. 
+        # Row order is flipped if @height is negative.
         y = (@height < 0) ? row : @height.abs-1-row
         x = 0
         while x < @width.abs
@@ -620,7 +614,7 @@ module TT::Plugins::BitmapToMesh
           when 4
             i = file.read(1).unpack('C').first
             #data[ palette[(i>>4) & 0x0f] ] << Geom::Point3d.new(x,y,0)
-            data << palette[(i>>4) & 0x0f] 
+            data << palette[(i>>4) & 0x0f]
             x += 1
             #data[ palette[i & 0x0f] ] << Geom::Point3d.new(x,y,0) if x < @width
             data << palette[i & 0x0f] if x < @width
@@ -645,13 +639,13 @@ module TT::Plugins::BitmapToMesh
           else
             raise "UNKNOWN BIT DEPTH! #{bitspp}"
           end
-          
+
           x += 1
         end
         # Skip trailing padding. Each row fills out to 32bit chunks
         # RowSizeTo32bit - RowSizeToWholeByte
         file.seek( (((@width*bitspp / 8) + 3) & ~3) - (@width*bitspp / 8.0).ceil, IO::SEEK_CUR)
-        
+
         row += 1
       end
       #puts "> EOF: #{file.eof?.inspect} - Pos: #{file.pos} / #{filesz}\n\n"
@@ -669,8 +663,8 @@ module TT::Plugins::BitmapToMesh
   end # class GL_BMP
 
 
-  ### DEBUG ### ------------------------------------------------------------  
-  
+  ### DEBUG ### ------------------------------------------------------------
+
   # @note Debug method to reload the plugin.
   #
   # @example
@@ -698,7 +692,7 @@ module TT::Plugins::BitmapToMesh
   ensure
     $VERBOSE = original_verbose
   end
-  
+
 end # module
 
 end # if TT_Lib

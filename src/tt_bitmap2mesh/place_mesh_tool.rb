@@ -12,7 +12,7 @@ module TT::Plugins::BitmapToMesh
     S_RECT  = 1
     S_BOX   = 2
 
-    def initialize( dib, image = nil )
+    def initialize(dib, image = nil)
       @dib = dib
       @ratio = dib.width.to_f / dib.height.to_f
 
@@ -28,7 +28,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def activate
-      reset()
+      reset
     end
 
     def reset
@@ -41,14 +41,14 @@ module TT::Plugins::BitmapToMesh
       @state = S_START
 
       if @image
-        @ip_start = Sketchup::InputPoint.new( @image.origin )
-        pt = @image.origin.offset( @image.normal.axes.x, @image.width )
-        pt.offset!( @image.normal.axes.y, @image.height )
-        @ip_rect = Sketchup::InputPoint.new( pt )
+        @ip_start = Sketchup::InputPoint.new(@image.origin)
+        pt = @image.origin.offset(@image.normal.axes.x, @image.width)
+        pt.offset!(@image.normal.axes.y, @image.height)
+        @ip_rect = Sketchup::InputPoint.new(pt)
         @state = S_BOX
       end
 
-      update_ui()
+      update_ui
     end
 
     def update_ui
@@ -60,13 +60,13 @@ module TT::Plugins::BitmapToMesh
       when S_RECT
         Sketchup.status_text = 'Pick width.'
         Sketchup.vcb_label = 'Width:'
-        pts = get_box()
-        Sketchup.vcb_value = pts[0].distance( pts[1] )
+        pts = get_box
+        Sketchup.vcb_value = pts[0].distance(pts[1])
       when S_BOX
         Sketchup.status_text = 'Pick depth.'
         Sketchup.vcb_label = 'Depth:'
-        pts = get_box()
-        Sketchup.vcb_value = pts[0].distance( pts[4] )
+        pts = get_box
+        Sketchup.vcb_value = pts[0].distance(pts[4])
       end
     end
 
@@ -79,7 +79,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def onCancel(reason, view)
-      reset()
+      reset
       view.invalidate
     end
 
@@ -89,33 +89,33 @@ module TT::Plugins::BitmapToMesh
       case @state
       when S_RECT
         pts = get_box()
-        vx = pts[0].vector_to( pts[1] )
+        vx = pts[0].vector_to(pts[1])
         if vx.valid?
-          pt = @ip_start.position.offset( vx, length )
-          @ip_rect = Sketchup::InputPoint.new( pt )
+          pt = @ip_start.position.offset(vx, length)
+          @ip_rect = Sketchup::InputPoint.new(pt)
           @state = S_BOX
         end
       when S_BOX
         pts = get_box()
-        normal = pts[0].vector_to( pts[4] )
+        normal = pts[0].vector_to(pts[4])
         unless normal.valid?
-          vx = pts[0].vector_to( pts[1] )
-          vy = pts[0].vector_to( pts[3] )
+          vx = pts[0].vector_to(pts[1])
+          vy = pts[0].vector_to(pts[3])
           normal = vx * vy
         end
-        pt = @ip_start.position.offset( normal, length )
-        @ip_mouse = Sketchup::InputPoint.new( pt )
-        generate_mesh()
+        pt = @ip_start.position.offset(normal, length)
+        @ip_mouse = Sketchup::InputPoint.new(pt)
+        generate_mesh
       end
-      update_ui()
+      update_ui
       view.invalidate
     end
 
     def onMouseMove(flags, x, y, view)
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
-      #@ph = view.pick_helper( x, y )
-      #@ph.do_pick( x, y )
+      #@ph = view.pick_helper(x, y)
+      #@ph.do_pick(x, y)
       view.invalidate
       update_ui()
     end
@@ -123,10 +123,10 @@ module TT::Plugins::BitmapToMesh
     def onLButtonUp(flags, x, y, view)
       case @state
       when S_START
-        #ph = view.pick_helper( x, y )
-        #ph.do_pick( x, y )
+        #ph = view.pick_helper(x, y)
+        #ph.do_pick(x, y)
         #bp = ph.best_picked
-        #if bp.is_a?( Sketchup::Image )
+        #if bp.is_a?(Sketchup::Image)
         #  @image = bp
         #  reset()
         #else
@@ -137,10 +137,10 @@ module TT::Plugins::BitmapToMesh
         @ip_rect.copy!(@ip_mouse)
         @state = S_BOX
       when S_BOX
-        generate_mesh()
+        generate_mesh
       end
       view.invalidate
-      update_ui()
+      update_ui
     end
 
     def draw(view)
@@ -154,23 +154,23 @@ module TT::Plugins::BitmapToMesh
 
       #if @state == S_START
       #  bp = @ph.best_picked
-      #  if bp.is_a?( Sketchup::Image )
+      #  if bp.is_a?(Sketchup::Image)
       #    axes = bp.normal.axes
       #    rect = []
       #    rect << bp.origin
-      #    rect << rect.last.offset( axes.x, bp.width )
-      #    rect << rect.last.offset( axes.y, bp.height )
-      #    rect << rect.first.offset( axes.y, bp.height )
-      #    view.draw( GL_LINE_LOOP, rect )
+      #    rect << rect.last.offset(axes.x, bp.width)
+      #    rect << rect.last.offset(axes.y, bp.height)
+      #    rect << rect.first.offset(axes.y, bp.height)
+      #    view.draw(GL_LINE_LOOP, rect)
       #  end
       #end
 
       if @state == S_RECT || @state == S_BOX
-        view.draw( GL_LINE_LOOP, box[0..3] )
+        view.draw(GL_LINE_LOOP, box[0..3])
       end
 
       if @state == S_BOX
-        view.draw( GL_LINE_LOOP, box[4..7] )
+        view.draw(GL_LINE_LOOP, box[4..7])
 
         connectors = [
           box[0], box[4],
@@ -178,7 +178,7 @@ module TT::Plugins::BitmapToMesh
           box[2], box[6],
           box[3], box[7]
         ]
-        view.draw( GL_LINES, connectors )
+        view.draw(GL_LINES, connectors)
       end
     end
 
@@ -186,7 +186,7 @@ module TT::Plugins::BitmapToMesh
       bb = Geom::BoundingBox.new
       pts = get_box()
       pts.each { |pt|
-        bb.add( pt )
+        bb.add(pt)
       }
       bb
     end
@@ -210,35 +210,35 @@ module TT::Plugins::BitmapToMesh
         ip2 = (@state == S_RECT) ? @ip_mouse : @ip_rect
 
         pt1 = @ip_start.position
-        pt2 = ip2.position.project_to_line( [pt1, vx] )
-        width = pt1.distance( pt2 )
+        pt2 = ip2.position.project_to_line([pt1, vx])
+        width = pt1.distance(pt2)
         height = width / @ratio
-        pt3 = pt2.offset( vy, height )
-        pt4 = pt1.offset( vy, height )
+        pt3 = pt2.offset(vy, height)
+        pt4 = pt1.offset(vy, height)
 
         rect_lower = [pt1, pt2, pt3, pt4]
-        pts.concat( rect_lower )
+        pts.concat(rect_lower)
       end
 
       if @state == S_BOX
         mp = @ip_mouse.position
-        pt5 = mp.project_to_line( [pt1, vz] )
-        depth = pt1.vector_to( pt5 )
-        pt6 = pt2.offset( depth )
-        pt7 = pt3.offset( depth )
-        pt8 = pt4.offset( depth )
+        pt5 = mp.project_to_line([pt1, vz])
+        depth = pt1.vector_to(pt5)
+        pt6 = pt2.offset(depth)
+        pt7 = pt3.offset(depth)
+        pt8 = pt4.offset(depth)
 
         rect_upper = [pt5, pt6, pt7, pt8]
-        pts.concat( rect_upper )
+        pts.concat(rect_upper)
       end
       pts
     end
 
     def generate_mesh
       box = get_box()
-      xaxis = box[0].vector_to( box[1] )
-      yaxis = box[0].vector_to( box[3] )
-      zaxis = box[0].vector_to( box[4] )
+      xaxis = box[0].vector_to(box[1])
+      yaxis = box[0].vector_to(box[3])
+      zaxis = box[0].vector_to(box[4])
       width  = xaxis.length
       height = yaxis.length
       depth  = zaxis.length
@@ -262,7 +262,7 @@ module TT::Plugins::BitmapToMesh
       start_time = Time.now
       # Read colour values and generate 3d points.
       pts = []
-      progress = TT::Progressbar.new( dib.pixels, 'Reading Image' )
+      progress = TT::Progressbar.new(dib.pixels, 'Reading Image')
       dib.height.times { |y|
         dib.width.times { |x|
           progress.next
@@ -279,7 +279,7 @@ module TT::Plugins::BitmapToMesh
           ptx = step_x * x
           pty = step_y * y
           ptz = step_z * average_color
-          pts << Geom::Point3d.new( [ptx, pty, ptz] )
+          pts << Geom::Point3d.new([ptx, pty, ptz])
         }
       }
       total = pts.size.to_f
@@ -287,23 +287,23 @@ module TT::Plugins::BitmapToMesh
       t = Time.now
       # (!) Bottleneck!
       # Populate the mesh with the point and build an vertex index.
-      progress = TT::Progressbar.new( pts, 'Indexing Points' )
-      mesh = Geom::PolygonMesh.new( pts.size, pts.size * 2 )
+      progress = TT::Progressbar.new(pts, 'Indexing Points')
+      mesh = Geom::PolygonMesh.new(pts.size, pts.size * 2)
       pi = []
       pts.each_with_index { |pt, i|
         progress.next
-        Sketchup.status_text = sprintf("Indexing points: %.1f%%", ( i / total ) * 100.0 )
+        Sketchup.status_text = sprintf("Indexing points: %.1f%%", (i / total) * 100.0)
         pi << mesh.add_point(pt)
       }
       puts "> Indexing points took: #{Time.now - start_time}s"
       t = Time.now
       # Generate the mesh
-      progress = TT::Progressbar.new( dib.pixels, 'Generating Mesh' )
+      progress = TT::Progressbar.new(dib.pixels, 'Generating Mesh')
       0.upto(dib.height-2) { |y|
         0.upto(dib.width-2) { |x|
           progress.next
           r = y * dib.width # Current row
-          Sketchup.status_text = sprintf("Generating mesh: %.1f%%", ( (x+r) / total ) * 100.0 )
+          Sketchup.status_text = sprintf("Generating mesh: %.1f%%", ((x+r) / total) * 100.0)
           # Pick out the indexes from the patch 2D-matrix we're interested in.
           pos = [ x+r, x+1+r, x+dib.width+1+r, x+dib.width+r ]
           # Get the point indexes and mirror orientation
@@ -318,7 +318,7 @@ module TT::Plugins::BitmapToMesh
       Sketchup.status_text = 'Filling group with mesh...'
       # Add the geometry to the model
       group = model.active_entities.add_group
-      group.entities.fill_from_mesh( mesh, true, 12 )
+      group.entities.fill_from_mesh(mesh, true, 12)
       puts "> Filling mesh took: #{Time.now - t}s"
       puts "Total time: #{Time.now - start_time}s"
       group

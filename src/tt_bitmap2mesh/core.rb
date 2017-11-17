@@ -15,9 +15,9 @@ rescue LoadError => e
         :dialog_title => 'TT_Lib² Not Installed',
         :scrollable => false, :resizable => false, :left => 200, :top => 200
       }
-      w = UI::WebDialog.new( options )
-      w.set_size( 500, 300 )
-      w.set_url( "#{url}?plugin=#{File.basename( __FILE__ )}" )
+      w = UI::WebDialog.new(options)
+      w.set_size(500, 300)
+      w.set_url("#{url}?plugin=#{File.basename( __FILE__ )}")
       w.show
       @lib2_update = w
     end
@@ -32,13 +32,13 @@ require 'tt_bitmap2mesh/place_mesh_tool'
 
 #-------------------------------------------------------------------------------
 
-if defined?( TT::Lib ) && TT::Lib.compatible?( '2.7.0', 'Bitmap to Mesh' )
+if defined?(TT::Lib) && TT::Lib.compatible?('2.7.0', 'Bitmap to Mesh')
 
 module TT::Plugins::BitmapToMesh
 
   ### MENU & TOOLBARS ### --------------------------------------------------
 
-  unless file_loaded?( __FILE__ )
+  unless file_loaded?(__FILE__)
     m = TT.menu('Draw')
     m.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool() }
 
@@ -56,15 +56,15 @@ module TT::Plugins::BitmapToMesh
 
 
   def self.image_to_mesh
-    temp_path = File.expand_path( TT::System.temp_path )
-    temp_file = File.join( temp_path, 'TT_BMP2Mesh.bmp' )
+    temp_path = File.expand_path(TT::System.temp_path)
+    temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
     model = Sketchup.active_model
     image = model.selection[0]
     tw = Sketchup.create_texture_writer
-    tw.load( image )
-    tw.write( image, temp_file )
-    dib = GL_BMP.new( temp_file )
-    File.delete( temp_file )
+    tw.load(image)
+    tw.write(image, temp_file)
+    dib = GL_BMP.new(temp_file)
+    File.delete(temp_file)
 
     size_x = image.width / image.pixelwidth
     size_y = image.height / image.pixelheight
@@ -72,14 +72,13 @@ module TT::Plugins::BitmapToMesh
       g = model.active_entities.add_group
       g.description = 'Mesh from Bitmap'
       progress = TT::Progressbar.new( dib.pixels, 'Mesh from Bitmap' )
-      g.transform!( self.image_transformation(image) )
+      g.transform!(self.image_transformation(image))
       dib.height.times { |y|
         dib.width.times { |x|
           progress.next
           index = (dib.width * y) + x
           color = dib.data[index]
           # Generate a Point3d from pixel colour.
-          #r,g,b = color
           left  = x * size_x
           top   = y * size_y
           pts = [
@@ -103,9 +102,8 @@ module TT::Plugins::BitmapToMesh
     origin = image.origin
     axes = image.normal.axes
     tr = Geom::Transformation.axes(ORIGIN, axes.x, axes.y, axes.z)
-    tr = tr*Geom::Transformation.rotation(ORIGIN, Z_AXIS, image.zrotation)
-    #tr = (tr*Geom::Transformation.scaling(ORIGIN, image.width/image.pixelwidth, image.height/image.pixelheight, 1)).to_a
-    tr = (tr*Geom::Transformation.scaling(ORIGIN, 1, 1, 1)).to_a
+    tr = tr * Geom::Transformation.rotation(ORIGIN, Z_AXIS, image.zrotation)
+    tr = (tr * Geom::Transformation.scaling(ORIGIN, 1, 1, 1)).to_a
     tr[12] = origin.x
     tr[13] = origin.y
     tr[14] = origin.z
@@ -114,16 +112,16 @@ module TT::Plugins::BitmapToMesh
 
 
   def self.heightmap_to_mesh
-    temp_path = File.expand_path( TT::System.temp_path )
-    temp_file = File.join( temp_path, 'TT_BMP2Mesh.bmp' )
+    temp_path = File.expand_path(TT::System.temp_path)
+    temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
     model = Sketchup.active_model
     image = model.selection[0]
     tw = Sketchup.create_texture_writer
-    tw.load( image )
-    tw.write( image, temp_file )
-    dib = GL_BMP.new( temp_file )
-    File.delete( temp_file )
-    Sketchup.active_model.tools.push_tool( PlaceMeshTool.new(dib, image) )
+    tw.load(image)
+    tw.write(image, temp_file)
+    dib = GL_BMP.new(temp_file)
+    File.delete(temp_file)
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib, image))
   end
 
 
@@ -132,9 +130,9 @@ module TT::Plugins::BitmapToMesh
     filename = UI.openpanel('Select BMP File', nil, '*.bmp')
     return if filename.nil?
     # Load data
-    dib = GL_BMP.new( filename )
+    dib = GL_BMP.new(filename)
     # Make the user pick the position of the mesh.
-    Sketchup.active_model.tools.push_tool( PlaceMeshTool.new(dib) )
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib))
   end
 
 end # module

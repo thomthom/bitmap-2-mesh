@@ -26,7 +26,7 @@ end
 
 
 require 'tt_bitmap2mesh/debug'
-require 'tt_bitmap2mesh/gl_bmp'
+require 'tt_bitmap2mesh/dib'
 require 'tt_bitmap2mesh/place_mesh_tool'
 
 
@@ -40,11 +40,11 @@ module TT::Plugins::BitmapToMesh
 
   unless file_loaded?(__FILE__)
     m = TT.menu('Draw')
-    m.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool() }
+    m.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool }
 
     UI.add_context_menu_handler { |context_menu|
       sel = Sketchup.active_model.selection
-      if sel.length == 1 && sel[0].is_a?( Sketchup::Image )
+      if sel.length == 1 && sel[0].is_a?(Sketchup::Image)
         context_menu.add_item('Mesh From Heightmap')  { self.heightmap_to_mesh }
         context_menu.add_item('Mesh From Bitmap')     { self.image_to_mesh }
       end
@@ -56,22 +56,15 @@ module TT::Plugins::BitmapToMesh
 
 
   def self.image_to_mesh
-    temp_path = File.expand_path(TT::System.temp_path)
-    temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
-    model = Sketchup.active_model
     image = model.selection[0]
-    tw = Sketchup.create_texture_writer
-    tw.load(image)
-    tw.write(image, temp_file)
-    dib = GL_BMP.new(temp_file)
-    File.delete(temp_file)
+    dib = DIB.from_image(image)
 
     size_x = image.width / image.pixelwidth
     size_y = image.height / image.pixelheight
     model.start_operation('Mesh From Bitmap', true)
       g = model.active_entities.add_group
       g.description = 'Mesh from Bitmap'
-      progress = TT::Progressbar.new( dib.pixels, 'Mesh from Bitmap' )
+      progress = TT::Progressbar.new(dib.pixels, 'Mesh from Bitmap')
       g.transform!(self.image_transformation(image))
       dib.height.times { |y|
         dib.width.times { |x|
@@ -82,14 +75,14 @@ module TT::Plugins::BitmapToMesh
           left  = x * size_x
           top   = y * size_y
           pts = [
-            [left,top,0],
-            [left+size_x,top,0],
-            [left+size_x,top+size_y,0],
-            [left,top+size_y,0]
+            [left, top, 0],
+            [left + size_x, top, 0],
+            [left + size_x, top + size_y, 0],
+            [left, top+size_y, 0]
           ]
           # (!) Detect failed face creation (too small)
-          face = g.entities.add_face( pts )
-          face.reverse! unless face.normal.samedirection?( Z_AXIS )
+          face = g.entities.add_face(pts)
+          face.reverse! unless face.normal.samedirection?(Z_AXIS)
           face.material = color
         }
       }
@@ -97,8 +90,11 @@ module TT::Plugins::BitmapToMesh
   end
 
 
-  # (!) Doesn't handle flipped images correctly.
   def self.image_transformation(image)
+    if image.respond_to?(:transformation)
+      return image.transformation
+    end
+    # (!) Doesn't handle flipped images correctly.
     origin = image.origin
     axes = image.normal.axes
     tr = Geom::Transformation.axes(ORIGIN, axes.x, axes.y, axes.z)
@@ -107,30 +103,29 @@ module TT::Plugins::BitmapToMesh
     tr[12] = origin.x
     tr[13] = origin.y
     tr[14] = origin.z
-    return Geom::Transformation.new(tr)
+    Geom::Transformation.new(tr)
   end
 
 
   def self.heightmap_to_mesh
-    temp_path = File.expand_path(TT::System.temp_path)
-    temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
     model = Sketchup.active_model
     image = model.selection[0]
-    tw = Sketchup.create_texture_writer
-    tw.load(image)
-    tw.write(image, temp_file)
-    dib = GL_BMP.new(temp_file)
-    File.delete(temp_file)
+    dib = DIB.from_image(image)
     Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib, image))
   end
 
 
   def self.bitmap_to_mesh_tool
     # Select file
-    filename = UI.openpanel('Select BMP File', nil, '*.bmp')
+    if defined?(Sketchup::ImageRep)
+      # TODO: Add all supported SketchUp image types.
+      filename = UI.openpanel('Select image file', nil, 'Image Files|*.bmp;*.jpg;*.jpeg;*.png;||')
+    else
+      filename = UI.openpanel('Select BMP File', nil, '*.bmp')
+    end
     return if filename.nil?
-    # Load data
-    dib = GL_BMP.new(filename)
+    # Load data.
+    dib = DIB.new(filename)
     # Make the user pick the position of the mesh.
     Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib))
   end

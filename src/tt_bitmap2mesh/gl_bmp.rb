@@ -190,7 +190,7 @@ module TT::Plugins::BitmapToMesh
       rescue => e
         puts "Failed to read #{filename}"
         puts e.message
-        puts e.backtrace
+        puts e.backtrace.join("\n")
         #data = {}
         data = []
       ensure

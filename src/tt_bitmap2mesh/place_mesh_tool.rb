@@ -5,6 +5,9 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'tt_bitmap2mesh/dib_render'
+
+
 module TT::Plugins::BitmapToMesh
   class PlaceMeshTool
 
@@ -15,6 +18,8 @@ module TT::Plugins::BitmapToMesh
     def initialize(dib, image = nil)
       @dib = dib
       @ratio = dib.width.to_f / dib.height.to_f
+
+      @dib_render = DIBRender.new(@dib)
 
       @ip_start = Sketchup::InputPoint.new
       @ip_rect  = Sketchup::InputPoint.new
@@ -114,6 +119,7 @@ module TT::Plugins::BitmapToMesh
     def onMouseMove(flags, x, y, view)
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
+      update_dib_render_transformation
       #@ph = view.pick_helper(x, y)
       #@ph.do_pick(x, y)
       view.invalidate
@@ -132,10 +138,12 @@ module TT::Plugins::BitmapToMesh
         #else
           @ip_start.copy!(@ip_mouse)
           @state = S_RECT
+          update_dib_render_transformation
         #end
       when S_RECT
         @ip_rect.copy!(@ip_mouse)
         @state = S_BOX
+        update_dib_render_transformation
       when S_BOX
         generate_mesh
       end
@@ -143,14 +151,40 @@ module TT::Plugins::BitmapToMesh
       update_ui
     end
 
+    def update_dib_render_transformation
+      box = get_box
+      if @state == S_RECT || @state == S_BOX
+        xaxis = box[0].vector_to(box[1])
+        yaxis = box[0].vector_to(box[3])
+        if xaxis.valid? && yaxis.valid?
+          # TODO: Cache transformation.
+          box_size = [xaxis.length, yaxis.length].max
+          scale = box_size.to_f / 64.0
+          tr_scale = Geom::Transformation.scaling(scale, scale, scale)
+          tr_origin = Geom::Transformation.new(box[0], xaxis, yaxis)
+          @dib_render.transformation = tr_origin * tr_scale
+        end
+      end
+    end
+
     def draw(view)
       @ip_mouse.draw(view) if @ip_mouse.valid?
+
+      box = get_box
+
+      if @state == S_RECT || @state == S_BOX
+        xaxis = box[0].vector_to(box[1])
+        yaxis = box[0].vector_to(box[3])
+        if xaxis.valid? && yaxis.valid?
+          @dib_render.draw(view)
+        end
+      end
 
       view.line_width = 2
       view.line_stipple = ''
       view.drawing_color = [255,0,0]
 
-      box = get_box
+      # box = get_box
 
       #if @state == S_START
       #  bp = @ph.best_picked
@@ -188,6 +222,7 @@ module TT::Plugins::BitmapToMesh
       pts.each { |pt|
         bb.add(pt)
       }
+      # bb.add(@dib_render.bounds)
       bb
     end
 

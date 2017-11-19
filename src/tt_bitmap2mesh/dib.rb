@@ -59,5 +59,11 @@ module TT::Plugins::BitmapToMesh
       @instance.height
     end
 
+    def [](x, y)
+      y2 = height - 1 - y
+      index = (width * y2) + x
+      data[index]
+    end
+
   end # module
 end # module

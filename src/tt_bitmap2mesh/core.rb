@@ -55,7 +55,35 @@ module TT::Plugins::BitmapToMesh
   ### MAIN SCRIPT ### ------------------------------------------------------
 
 
+  def self.bitmap_to_mesh_tool
+    # Select file
+    if defined?(Sketchup::ImageRep)
+      # TODO: Add all supported SketchUp image types.
+      filetypes = %w[bmp jpg jpeg png]
+      filter = filetypes.map { |filetype| "*.#{filetype}" }.join(';')
+      filter = "Image Files|#{filter}||"
+      filename = UI.openpanel('Select image file', nil, filter)
+    else
+      filename = UI.openpanel('Select BMP File', nil, '*.bmp')
+    end
+    return if filename.nil?
+    # Load data.
+    dib = DIB.new(filename)
+    # Make the user pick the position of the mesh.
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib))
+  end
+
+
+  def self.heightmap_to_mesh
+    model = Sketchup.active_model
+    image = model.selection[0]
+    dib = DIB.from_image(image)
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib, image))
+  end
+
+
   def self.image_to_mesh
+    model = Sketchup.active_model
     image = model.selection[0]
     dib = DIB.from_image(image)
 
@@ -78,7 +106,7 @@ module TT::Plugins::BitmapToMesh
             [left, top, 0],
             [left + size_x, top, 0],
             [left + size_x, top + size_y, 0],
-            [left, top+size_y, 0]
+            [left, top + size_y, 0]
           ]
           # (!) Detect failed face creation (too small)
           face = g.entities.add_face(pts)
@@ -107,28 +135,7 @@ module TT::Plugins::BitmapToMesh
   end
 
 
-  def self.heightmap_to_mesh
-    model = Sketchup.active_model
-    image = model.selection[0]
-    dib = DIB.from_image(image)
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib, image))
-  end
 
-
-  def self.bitmap_to_mesh_tool
-    # Select file
-    if defined?(Sketchup::ImageRep)
-      # TODO: Add all supported SketchUp image types.
-      filename = UI.openpanel('Select image file', nil, 'Image Files|*.bmp;*.jpg;*.jpeg;*.png;||')
-    else
-      filename = UI.openpanel('Select BMP File', nil, '*.bmp')
-    end
-    return if filename.nil?
-    # Load data.
-    dib = DIB.new(filename)
-    # Make the user pick the position of the mesh.
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib))
-  end
 
 end # module
 

@@ -160,7 +160,12 @@ module TT::Plugins::BitmapToMesh
           # TODO: Cache transformation.
           box_size = [xaxis.length, yaxis.length].max
           scale = box_size.to_f / 64.0
-          tr_scale = Geom::Transformation.scaling(scale, scale, scale)
+          if @state == S_BOX
+            scale_z = box[0].vector_to(box[4]).length
+          else
+            scale_z = 0
+          end
+          tr_scale = Geom::Transformation.scaling(scale, scale, scale_z)
           tr_origin = Geom::Transformation.new(box[0], xaxis, yaxis)
           @dib_render.transformation = tr_origin * tr_scale
         end

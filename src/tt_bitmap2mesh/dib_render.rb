@@ -13,20 +13,31 @@ module TT::Plugins::BitmapToMesh
 
     # attr_accessor :transformation
     attr_reader :transformation
+    attr_reader :height
 
     # @param [DIB] dib
     def initialize(dib, max_sample_size = 64)
       @dib = dib
       @transformation = Geom::Transformation.new
-      @samples = sample(@dib, max_sample_size)
       @cache = nil
       @bounds = nil
+      @height = 0
+      @samples = sample(@dib, max_sample_size)
     end
 
     def transformation=(value)
       @transformation = value
       @cache = nil
       @bounds = nil
+    end
+
+    def height=(value)
+      if value != @height
+        @height = value
+        @cache = nil
+        @bounds = nil
+        # @samples = sample(@dib, max_sample_size)
+      end
     end
 
     def bounds
@@ -45,7 +56,7 @@ module TT::Plugins::BitmapToMesh
     private
 
     def compute_bounds
-      max_point = Geom::Point3d.new(@dib.width, @dib.height, 0)
+      max_point = Geom::Point3d.new(@dib.width, @dib.height, @height)
       max_point.transform!(@transformation)
       bounds = Geom::BoundingBox.new
       bounds.add(max_point)
@@ -79,7 +90,8 @@ module TT::Plugins::BitmapToMesh
           x = (scaled_x * scale_up).round
           y = (scaled_y * scale_up).round
           color = dib[x, y]
-          quad = quad_points(scaled_x, scaled_y)
+          scaled_z = color_to_height(color)
+          quad = quad_points(scaled_x, scaled_y, scaled_z)
           data[color] ||= []
           data[color] << quad
         }
@@ -94,6 +106,24 @@ module TT::Plugins::BitmapToMesh
         Geom::Point3d.new(x + 1, y + 1, z),
         Geom::Point3d.new(x,     y + 1, z),
       ]
+    end
+
+    def color_to_height(color)
+      # return 0 if @height == 0
+      # ratio = color_to_grayscale(color) / 255.0
+      # @height * ratio
+      color_to_grayscale(color) / 255.0
+    end
+
+    def color_to_grayscale(color)
+      r, g, b = color
+      if r == g && g == b
+        average_color = r
+      else
+        # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865
+        average_color = (r * 0.3) + (g * 0.59) + (b * 0.11);
+      end
+      average_color
     end
 
   end # module

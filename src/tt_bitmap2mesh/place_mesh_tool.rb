@@ -346,7 +346,7 @@ module TT::Plugins::BitmapToMesh
           index = (dib.width * y) + x
           color = dib.data[index]
           # Generate a Point3d from pixel colour.
-          r, g, b = color
+          r, g, b = color.to_a
           if r == g && g == b
             average_color = r
           else

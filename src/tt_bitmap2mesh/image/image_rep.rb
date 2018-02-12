@@ -6,9 +6,9 @@
 #-------------------------------------------------------------------------------
 
 
-module TT::Plugins::BitmapToMesh
+module TT::Plugins::BitmapToMesh::Image
   # Interface to expose ImageRep functionality in similar fashion to GL_DIB.
-  class DIBImageRep
+  class ImageRep
 
     def initialize(source)
       if source.is_a?(String)

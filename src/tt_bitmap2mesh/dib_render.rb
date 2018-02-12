@@ -109,14 +109,11 @@ module TT::Plugins::BitmapToMesh
     end
 
     def color_to_height(color)
-      # return 0 if @height == 0
-      # ratio = color_to_grayscale(color) / 255.0
-      # @height * ratio
       color_to_grayscale(color) / 255.0
     end
 
     def color_to_grayscale(color)
-      r, g, b = color
+      r, g, b = color.to_a
       if r == g && g == b
         average_color = r
       else

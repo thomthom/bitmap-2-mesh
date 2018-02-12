@@ -18,10 +18,10 @@ careful with the bitmap sizes.
 
 ![Mesh from Heightmap](docs/images/BMP2Mesh.png "Mesh from Heightmap")
 
-![Terrain from Heightmap](docs/images/TerrainTest.png "Mesh from Heightmap")
+![Terrain from Heightmap](docs/images/TerrainTest.png "Terrain from Heightmap")
 
 
-### Mesh from Heightmap
+### Mesh from Bitmap
 
 ![Mesh from Bitmap](docs/images/BitmapToMesh.png "Mesh from Bitmap")
 

@@ -34,6 +34,7 @@ module TT::Plugins::BitmapToMesh
 
     def activate
       reset
+      update_dib_render_transformation
     end
 
     def reset

@@ -5,6 +5,9 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'tt_bitmap2mesh/image/color'
+
+
 module TT::Plugins::BitmapToMesh::Image
 
   # @data must be a hash where the key is a colour and the values are array of
@@ -13,8 +16,6 @@ module TT::Plugins::BitmapToMesh::Image
   class DIB
 
     attr_reader(:width, :height, :bitspp, :data)
-
-    class Color < Sketchup::Color; end
 
     class Buffer < Array
       def <<(value)

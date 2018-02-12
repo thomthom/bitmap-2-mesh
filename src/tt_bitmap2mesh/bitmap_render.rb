@@ -11,35 +11,37 @@ require 'tt_bitmap2mesh/bitmap'
 module TT::Plugins::BitmapToMesh
   class BitmapRender
 
-    # attr_accessor :transformation
     attr_reader :transformation
     attr_reader :height
 
-    # @param [Bitmap] dib
-    def initialize(dib, max_sample_size = 64)
-      @dib = dib
+    # @param [Bitmap] bitmap
+    def initialize(bitmap, max_sample_size = 64)
+      @bitmap = bitmap
       @transformation = Geom::Transformation.new
       @cache = nil
       @bounds = nil
       @height = 0
-      @samples = sample(@dib, max_sample_size)
+      @samples = sample(@bitmap, max_sample_size)
     end
 
+    # @param [Geom::Transformation] value
     def transformation=(value)
       @transformation = value
       @cache = nil
       @bounds = nil
     end
 
+    # @param [Length] value
     def height=(value)
       if value != @height
         @height = value
         @cache = nil
         @bounds = nil
-        # @samples = sample(@dib, max_sample_size)
+        # @samples = sample(@bitmap, max_sample_size)
       end
     end
 
+    # @return [Geom::BoundingBox]
     def bounds
       @bounds ||= compute_bounds
       @bounds
@@ -55,14 +57,16 @@ module TT::Plugins::BitmapToMesh
 
     private
 
+    # @return [Geom::BoundingBox]
     def compute_bounds
-      max_point = Geom::Point3d.new(@dib.width, @dib.height, @height)
+      max_point = Geom::Point3d.new(@bitmap.width, @bitmap.height, @height)
       max_point.transform!(@transformation)
       bounds = Geom::BoundingBox.new
       bounds.add(max_point)
       bounds
     end
 
+    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
     def compute_cache(samples)
       cached = {}
       samples.each { |color, quads|
@@ -73,23 +77,27 @@ module TT::Plugins::BitmapToMesh
       cached
     end
 
+    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
     def cache
       @cache ||= compute_cache(@samples)
       @cache
     end
 
-    def sample(dib, max_sample_size)
+    # @param [Bitmap] bitmap
+    # @param [Integer] max_sample_size
+    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
+    def sample(bitmap, max_sample_size)
       data = {}
-      max_image_size = [dib.width, dib.height].max
+      max_image_size = [bitmap.width, bitmap.height].max
       scale_down = max_sample_size.to_f / max_image_size.to_f
-      scaled_width = (dib.width * scale_down).round
-      scaled_height = (dib.height * scale_down).round
+      scaled_width = (bitmap.width * scale_down).round
+      scaled_height = (bitmap.height * scale_down).round
       scale_up = 1.0 / scale_down
       scaled_width.times { |scaled_x|
         scaled_height.times { |scaled_y|
           x = (scaled_x * scale_up).round
           y = (scaled_y * scale_up).round
-          color = dib[x, y]
+          color = bitmap[x, y]
           scaled_z = color_to_height(color)
           quad = quad_points(scaled_x, scaled_y, scaled_z)
           data[color] ||= []
@@ -99,6 +107,7 @@ module TT::Plugins::BitmapToMesh
       data
     end
 
+    # @return [Array(Geom::Point3d, Geom::Point3d, Geom::Point3d, Geom::Point3d)]
     def quad_points(x, y, z = 0)
       [
         Geom::Point3d.new(x,     y,     z),
@@ -108,19 +117,10 @@ module TT::Plugins::BitmapToMesh
       ]
     end
 
+    # @param [Image::Color] color
+    # @return [Float]
     def color_to_height(color)
-      color_to_grayscale(color) / 255.0
-    end
-
-    def color_to_grayscale(color)
-      r, g, b = color.to_a
-      if r == g && g == b
-        average_color = r
-      else
-        # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865
-        average_color = (r * 0.3) + (g * 0.59) + (b * 0.11)
-      end
-      average_color
+      color.luminance / 255.0
     end
 
   end # module

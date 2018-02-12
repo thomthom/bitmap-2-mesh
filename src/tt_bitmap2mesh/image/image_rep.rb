@@ -5,6 +5,8 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'tt_bitmap2mesh/image/color'
+
 
 module TT::Plugins::BitmapToMesh::Image
   # Interface to expose ImageRep functionality in similar fashion to Image::DIB.
@@ -18,7 +20,11 @@ module TT::Plugins::BitmapToMesh::Image
       end
       # The rows from ImageRep needs to be reversed in order to be compatible
       # with Image::DIB.
-      @data = @image_rep.colors.each_slice(width).to_a.reverse.flatten.map(&:to_a)
+      rows = @image_rep.colors.each_slice(width).to_a
+      rows.reverse!
+      rows.flatten!
+      rows.map! { |color| Image::Color.new(color) }
+      @data = rows
     end
 
     def pixels

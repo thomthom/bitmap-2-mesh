@@ -322,16 +322,16 @@ module TT::Plugins::BitmapToMesh
       material
     end
 
-    def bitmap_to_mesh(dib, width, height, depth)
+    def bitmap_to_mesh(bitmap, width, height, depth)
       model = Sketchup.active_model
 
-      step_x = width  / dib.width
-      step_y = height / dib.height
+      step_x = width  / bitmap.width
+      step_y = height / bitmap.height
       step_z = depth  / 255
 
-      puts "Bitmap To Mesh: (#{dib.provider})"
-      puts "> Pixels: #{dib.width * dib.height} (#{dib.width}x#{dib.height})"
-      puts "> Triangles: #{dib.width * dib.height * 2}"
+      puts "Bitmap To Mesh: (#{bitmap.provider})"
+      puts "> Pixels: #{bitmap.width * bitmap.height} (#{bitmap.width}x#{bitmap.height})"
+      puts "> Triangles: #{bitmap.width * bitmap.height * 2}"
       start_time = Time.now
 
       # Read colour values and generate 3D points.
@@ -339,23 +339,16 @@ module TT::Plugins::BitmapToMesh
       #       Additionally the down-sampling logic can be used, but need UI
       #       allow the user to control max-sample size.
       points = []
-      progress = TT::Progressbar.new(dib.pixels, 'Reading Image')
-      dib.height.times { |y|
-        dib.width.times { |x|
+      progress = TT::Progressbar.new(bitmap.pixels, 'Reading Image')
+      bitmap.height.times { |y|
+        bitmap.width.times { |x|
           progress.next
-          index = (dib.width * y) + x
-          color = dib.data[index]
+          index = (bitmap.width * y) + x
+          color = bitmap.data[index]
           # Generate a Point3d from pixel colour.
-          r, g, b = color.to_a
-          if r == g && g == b
-            average_color = r
-          else
-            # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865
-            average_color = (r * 0.3) + (g * 0.59) + (b * 0.11)
-          end
           point_x = step_x * x
           point_y = step_y * y
-          point_z = step_z * average_color
+          point_z = step_z * color.luminance
           points << Geom::Point3d.new(point_x, point_y, point_z)
         }
       }
@@ -380,10 +373,10 @@ module TT::Plugins::BitmapToMesh
       #     linear lookups?
       if mesh.respond_to?(:set_uv)
         t = Time.now
-        w = dib.width
-        h = dib.height
-        u_step = 1.0 / dib.width.to_f
-        v_step = 1.0 / dib.height.to_f
+        w = bitmap.width
+        h = bitmap.height
+        u_step = 1.0 / bitmap.width.to_f
+        v_step = 1.0 / bitmap.height.to_f
         progress = TT::Progressbar.new(points, 'Adding UV mapping')
         points.each_with_index { |pt, i|
           progress.next
@@ -400,14 +393,14 @@ module TT::Plugins::BitmapToMesh
 
       t = Time.now
       # Generate the mesh
-      progress = TT::Progressbar.new(dib.pixels, 'Generating Mesh')
-      0.upto(dib.height-2) { |y|
-        0.upto(dib.width-2) { |x|
+      progress = TT::Progressbar.new(bitmap.pixels, 'Generating Mesh')
+      0.upto(bitmap.height-2) { |y|
+        0.upto(bitmap.width-2) { |x|
           progress.next
-          r = y * dib.width # Current row
+          r = y * bitmap.width # Current row
           Sketchup.status_text = sprintf("Generating mesh: %.1f%%", ((x+r) / total) * 100.0)
           # Pick out the indicies from the patch 2D-matrix we're interested in.
-          point_indicies = [ x+r, x+1+r, x+dib.width+1+r, x+dib.width+r ]
+          point_indicies = [ x+r, x+1+r, x+bitmap.width+1+r, x+bitmap.width+r ]
           # Get the point indicies and mirror orientation
           indicies = point_indicies.map { |i| mesh_indicies[i] }
           next unless indicies.length > 2

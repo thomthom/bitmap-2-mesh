@@ -155,19 +155,23 @@ module TT::Plugins::BitmapToMesh
     def update_dib_render_transformation
       box = get_box
       if @state == S_RECT || @state == S_BOX
-        xaxis = box[0].vector_to(box[1])
-        yaxis = box[0].vector_to(box[3])
-        if xaxis.valid? && yaxis.valid?
+        x_axis = box[0].vector_to(box[1])
+        y_axis = box[0].vector_to(box[3])
+        if x_axis.valid? && y_axis.valid?
           # TODO: Cache transformation.
-          box_size = [xaxis.length, yaxis.length].max
+          box_size = [x_axis.length, y_axis.length].max
           scale = box_size.to_f / 64.0
           if @state == S_BOX
-            scale_z = box[0].vector_to(box[4]).length
+            z_axis = box[0].vector_to(box[4])
+            scale_z = z_axis.length
+            # Check direction:
+            dot = (x_axis * y_axis) % z_axis
+            scale_z = -scale_z if dot < 0.0
           else
             scale_z = 0
           end
           tr_scale = Geom::Transformation.scaling(scale, scale, scale_z)
-          tr_origin = Geom::Transformation.new(box[0], xaxis, yaxis)
+          tr_origin = Geom::Transformation.new(box[0], x_axis, y_axis)
           @dib_render.transformation = tr_origin * tr_scale
         end
       end

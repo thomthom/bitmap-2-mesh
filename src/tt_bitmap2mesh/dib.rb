@@ -15,8 +15,10 @@ module TT::Plugins::BitmapToMesh
   # GL_DIB interface. This done to keep compatibility with pre-SU2018 versions.
   class DIB
 
+    FORCE_LEGACY = false # For testing the old interface in newer SU versions.
+
     def self.from_image(image)
-      if image.respond_to?(:image_rep)
+      if image.respond_to?(:image_rep) && !FORCE_LEGACY
         return self.new(image.image_rep)
       end
       temp_path = File.expand_path(TT::System.temp_path)
@@ -31,18 +33,22 @@ module TT::Plugins::BitmapToMesh
 
     def initialize(source)
       if source.is_a?(String)
-        if defined?(Sketchup::ImageRep)
+        if defined?(Sketchup::ImageRep) && !FORCE_LEGACY
           @instance = DIBImageRep.new(source)
         else
           @instance = GL_BMP.new(source)
         end
-      elsif defined?(Sketchup::ImageRep) && source.is_a?(Sketchup::ImageRep)
+      elsif defined?(Sketchup::ImageRep) && source.is_a?(Sketchup::ImageRep) && !FORCE_LEGACY
         @instance = DIBImageRep.new(source)
       elsif source.is_a?(GL_DIB)
         @instance = source
       else
         raise TypeError
       end
+    end
+
+    def provider
+      @instance.class
     end
 
     def pixels
@@ -62,8 +68,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def [](x, y)
-      y2 = height - 1 - y
-      index = (width * y2) + x
+      index = (width * y) + x
       data[index]
     end
 

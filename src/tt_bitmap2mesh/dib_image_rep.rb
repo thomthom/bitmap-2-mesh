@@ -16,7 +16,9 @@ module TT::Plugins::BitmapToMesh
       elsif defined?(Sketchup::ImageRep) && source.is_a?(Sketchup::ImageRep)
         @image_rep = source
       end
-      @data = @image_rep.colors.map(&:to_a)
+      # The rows from ImageRep needs to be reversed in order to be compatible
+      # with GL_DIB.
+      @data = @image_rep.colors.each_slice(width).to_a.reverse.flatten.map(&:to_a)
     end
 
     def pixels

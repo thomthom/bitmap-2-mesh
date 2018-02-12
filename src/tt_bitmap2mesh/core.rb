@@ -61,8 +61,7 @@ module TT::Plugins::BitmapToMesh
   def self.bitmap_to_mesh_tool
     # Select file
     if defined?(Sketchup::ImageRep)
-      # TODO: Add all supported SketchUp image types.
-      filetypes = %w[bmp jpg jpeg png]
+      filetypes = %w[bmp jpg jpeg png psd tif tga]
       filter = filetypes.map { |filetype| "*.#{filetype}" }.join(';')
       filter = "Image Files|#{filter}||"
       filename = UI.openpanel('Select image file', nil, filter)

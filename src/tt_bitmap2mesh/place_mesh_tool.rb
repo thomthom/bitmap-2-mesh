@@ -12,21 +12,28 @@ require 'tt_bitmap2mesh/dib_render'
 module TT::Plugins::BitmapToMesh
   class PlaceMeshTool
 
-    S_START = 0
-    S_RECT  = 1
-    S_BOX   = 2
+    module State
+      PICK_ORIGIN = 0
+      PICK_IMAGE_SIZE = 1
+      PICK_HEIGHT = 2
+    end
 
     def initialize(dib, image = nil)
       @dib = dib
-      @ratio = dib.width.to_f / dib.height.to_f
+      @ratio = dib.width.to_f / dib.height.to_f # TODO: Make property of DIB.
 
+      # Renders low-res preview of the heightmap.
       @dib_render = DIBRender.new(@dib)
+
+      # The Sketchup::Image entity to generate the mesh from.
+      @image = image
 
       @ip_start = Sketchup::InputPoint.new
       @ip_rect  = Sketchup::InputPoint.new
       @ip_mouse = Sketchup::InputPoint.new
 
-      @image = image
+      # Keeps track of the tool's state.
+      @state = nil
     end
 
     def enableVCB?
@@ -35,7 +42,6 @@ module TT::Plugins::BitmapToMesh
 
     def activate
       reset
-      update_dib_render_transformation
     end
 
     def reset
@@ -43,37 +49,38 @@ module TT::Plugins::BitmapToMesh
       @ip_rect.clear
       @ip_mouse.clear
 
-      @ph = nil
+      @state = State::PICK_ORIGIN
 
-      @state = S_START
-
+      # If an image is already provided then extract position and other state
+      # data from that.
       if @image
         @ip_start = Sketchup::InputPoint.new(@image.origin)
-        pt = @image.origin.offset(@image.normal.axes.x, @image.width)
-        pt.offset!(@image.normal.axes.y, @image.height)
-        @ip_rect = Sketchup::InputPoint.new(pt)
-        @state = S_BOX
+        point = @image.origin.offset(@image.normal.axes.x, @image.width)
+        point.offset!(@image.normal.axes.y, @image.height)
+        @ip_rect = Sketchup::InputPoint.new(point)
+        @state = State::PICK_HEIGHT
       end
 
+      update_dib_render_transformation
       update_ui
     end
 
     def update_ui
       case @state
-      when S_START
+      when State::PICK_ORIGIN
         Sketchup.status_text = 'Pick origin. Picking a point on a face will orient the mesh to the face.'
         Sketchup.vcb_label = ''
         Sketchup.vcb_value = ''
-      when S_RECT
+      when State::PICK_IMAGE_SIZE
         Sketchup.status_text = 'Pick width.'
         Sketchup.vcb_label = 'Width:'
-        pts = get_box
-        Sketchup.vcb_value = pts[0].distance(pts[1])
-      when S_BOX
+        points = get_bounding_points
+        Sketchup.vcb_value = points[0].distance(points[1])
+      when State::PICK_HEIGHT
         Sketchup.status_text = 'Pick depth.'
         Sketchup.vcb_label = 'Depth:'
-        pts = get_box
-        Sketchup.vcb_value = pts[0].distance(pts[4])
+        points = get_bounding_points
+        Sketchup.vcb_value = points[0].distance(points[4])
       end
     end
 
@@ -94,26 +101,27 @@ module TT::Plugins::BitmapToMesh
       length = text.to_l
       return if length == 0
       case @state
-      when S_RECT
-        pts = get_box
-        vx = pts[0].vector_to(pts[1])
-        if vx.valid?
-          pt = @ip_start.position.offset(vx, length)
-          @ip_rect = Sketchup::InputPoint.new(pt)
-          @state = S_BOX
+      when State::PICK_IMAGE_SIZE
+        points = get_bounding_points
+        x_axis = points[0].vector_to(points[1])
+        if x_axis.valid?
+          point = @ip_start.position.offset(x_axis, length)
+          @ip_rect = Sketchup::InputPoint.new(point)
+          @state = State::PICK_HEIGHT
         end
-      when S_BOX
-        pts = get_box
-        normal = pts[0].vector_to(pts[4])
-        unless normal.valid?
-          vx = pts[0].vector_to(pts[1])
-          vy = pts[0].vector_to(pts[3])
-          normal = vx * vy
+      when State::PICK_HEIGHT
+        points = get_bounding_points
+        z_axis = points[0].vector_to(points[4])
+        unless z_axis.valid?
+          x_axis = points[0].vector_to(points[1])
+          y_axis = points[0].vector_to(points[3])
+          z_axis = x_axis * y_axis
         end
-        pt = @ip_start.position.offset(normal, length)
-        @ip_mouse = Sketchup::InputPoint.new(pt)
+        point = @ip_start.position.offset(z_axis, length)
+        @ip_mouse = Sketchup::InputPoint.new(point)
         generate_mesh
       end
+    ensure
       update_ui
       view.invalidate
     end
@@ -122,31 +130,21 @@ module TT::Plugins::BitmapToMesh
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
       update_dib_render_transformation
-      #@ph = view.pick_helper(x, y)
-      #@ph.do_pick(x, y)
       view.invalidate
       update_ui
     end
 
     def onLButtonUp(flags, x, y, view)
       case @state
-      when S_START
-        #ph = view.pick_helper(x, y)
-        #ph.do_pick(x, y)
-        #bp = ph.best_picked
-        #if bp.is_a?(Sketchup::Image)
-        #  @image = bp
-        #  reset
-        #else
-          @ip_start.copy!(@ip_mouse)
-          @state = S_RECT
-          update_dib_render_transformation
-        #end
-      when S_RECT
-        @ip_rect.copy!(@ip_mouse)
-        @state = S_BOX
+      when State::PICK_ORIGIN
+        @ip_start.copy!(@ip_mouse)
+        @state = State::PICK_IMAGE_SIZE
         update_dib_render_transformation
-      when S_BOX
+      when State::PICK_IMAGE_SIZE
+        @ip_rect.copy!(@ip_mouse)
+        @state = State::PICK_HEIGHT
+        update_dib_render_transformation
+      when State::PICK_HEIGHT
         generate_mesh
       end
       view.invalidate
@@ -154,15 +152,15 @@ module TT::Plugins::BitmapToMesh
     end
 
     def update_dib_render_transformation
-      box = get_box
-      if @state == S_RECT || @state == S_BOX
+      box = get_bounding_points
+      if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         x_axis = box[0].vector_to(box[1])
         y_axis = box[0].vector_to(box[3])
         if x_axis.valid? && y_axis.valid?
           # TODO: Cache transformation.
           box_size = [x_axis.length, y_axis.length].max
           scale = box_size.to_f / 64.0
-          if @state == S_BOX
+          if @state == State::PICK_HEIGHT
             z_axis = box[0].vector_to(box[4])
             scale_z = z_axis.length
             # Check direction:
@@ -181,9 +179,9 @@ module TT::Plugins::BitmapToMesh
     def draw(view)
       @ip_mouse.draw(view) if @ip_mouse.valid?
 
-      box = get_box
+      box = get_bounding_points
 
-      if @state == S_RECT || @state == S_BOX
+      if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         xaxis = box[0].vector_to(box[1])
         yaxis = box[0].vector_to(box[3])
         if xaxis.valid? && yaxis.valid?
@@ -195,26 +193,11 @@ module TT::Plugins::BitmapToMesh
       view.line_stipple = ''
       view.drawing_color = [255,0,0]
 
-      # box = get_box
-
-      #if @state == S_START
-      #  bp = @ph.best_picked
-      #  if bp.is_a?(Sketchup::Image)
-      #    axes = bp.normal.axes
-      #    rect = []
-      #    rect << bp.origin
-      #    rect << rect.last.offset(axes.x, bp.width)
-      #    rect << rect.last.offset(axes.y, bp.height)
-      #    rect << rect.first.offset(axes.y, bp.height)
-      #    view.draw(GL_LINE_LOOP, rect)
-      #  end
-      #end
-
-      if @state == S_RECT || @state == S_BOX
+      if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         view.draw(GL_LINE_LOOP, box[0..3])
       end
 
-      if @state == S_BOX
+      if @state == State::PICK_HEIGHT
         view.draw(GL_LINE_LOOP, box[4..7])
 
         connectors = [
@@ -228,79 +211,88 @@ module TT::Plugins::BitmapToMesh
     end
 
     def getExtents
-      bb = Geom::BoundingBox.new
-      pts = get_box
-      pts.each { |pt|
-        bb.add(pt)
-      }
-      # bb.add(@dib_render.bounds)
-      bb
+      bounds = Geom::BoundingBox.new
+      get_bounding_points.each { |point| bounds.add(point) }
+      bounds
     end
 
-    def get_box
-      pts = []
-      if @state == S_RECT || @state == S_BOX
+    # TODO: Return a Bounds class that include methods for the computations
+    # done with these points. This would be a class that is different from
+    # Geom::BoundingBox because it should represent the orientation in model
+    # space.
+    def get_bounding_points
+      points = []
+      if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         if @image
-          vx = @image.normal.axes.x
-          vy = @image.normal.axes.y
-          vz = @image.normal.axes.z
-          plane = [ @image.origin, vz ]
+          x_axis = @image.normal.axes.x
+          y_axis = @image.normal.axes.y
+          z_axis = @image.normal.axes.z
+          plane = [@image.origin, z_axis]
         else
           face = @ip_start.face
-          vx = (face) ? face.normal.axes.x : X_AXIS
-          vy = (face) ? face.normal.axes.y : Y_AXIS
-          vz = (face) ? face.normal.axes.z : Z_AXIS
+          x_axis = (face) ? face.normal.axes.x : X_AXIS
+          y_axis = (face) ? face.normal.axes.y : Y_AXIS
+          z_axis = (face) ? face.normal.axes.z : Z_AXIS
           plane = (face) ? face.plane : [ORIGIN, Z_AXIS]
         end
 
-        ip2 = (@state == S_RECT) ? @ip_mouse : @ip_rect
-
+        # Picked origin location.
         pt1 = @ip_start.position
-        pt2 = ip2.position.project_to_line([pt1, vx])
+        # Project second input point to the X axis of the image.
+        ip2 = (@state == State::PICK_IMAGE_SIZE) ? @ip_mouse : @ip_rect
+        pt2 = ip2.position.project_to_line([pt1, x_axis])
+        # This defines the width of the boundingbox from where we can also
+        # infere the height.
         width = pt1.distance(pt2)
         height = width / @ratio
-        pt3 = pt2.offset(vy, height)
-        pt4 = pt1.offset(vy, height)
+        # Now we have all the info needed to compute the remaining points of
+        # the lower rectangle.
+        pt3 = pt2.offset(y_axis, height)
+        pt4 = pt1.offset(y_axis, height)
 
-        rect_lower = [pt1, pt2, pt3, pt4]
-        pts.concat(rect_lower)
+        lower_rectangle = [pt1, pt2, pt3, pt4]
+        points.concat(lower_rectangle)
       end
 
-      if @state == S_BOX
-        # HACK(thomthom): Clean this up. Get pick_rway from mouse event.
+      if @state == State::PICK_HEIGHT
+        # HACK(thomthom): Clean this up. Get pick_ray from mouse event.
         view = Sketchup.active_model.active_view
         pick_ray = [view.camera.eye, @ip_mouse.position]
+        # Create a line in the direction of the image's normal. We'll use the
+        # image's origin as an arbitrary reference point. (Could easily have
+        # been something like the centre.)
         image_ray = [@image.origin, @image.normal]
+        # From that we find the closest point to the image which will define the
+        # height of the height mesh.
         pt5, pt_pick = Geom.closest_points(image_ray, pick_ray)
-
-        # mp = @ip_mouse.position
-        # pt5 = mp.project_to_line([pt1, vz])
         depth = pt1.vector_to(pt5)
         pt6 = pt2.offset(depth)
         pt7 = pt3.offset(depth)
         pt8 = pt4.offset(depth)
 
-        rect_upper = [pt5, pt6, pt7, pt8]
-        pts.concat(rect_upper)
+        upper_rectangle = [pt5, pt6, pt7, pt8]
+        points.concat(upper_rectangle)
       end
-      pts
+      points
     end
 
     def generate_mesh
-      box = get_box
-      xaxis = box[0].vector_to(box[1])
-      yaxis = box[0].vector_to(box[3])
-      zaxis = box[0].vector_to(box[4])
-      width  = xaxis.length
-      height = yaxis.length
-      depth  = zaxis.length
+      box = get_bounding_points
+      x_axis = box[0].vector_to(box[1])
+      y_axis = box[0].vector_to(box[3])
+      z_axis = box[0].vector_to(box[4])
+      width  = x_axis.length
+      height = y_axis.length
+      depth  = z_axis.length
       origin = box[0]
       model = Sketchup.active_model
       model.start_operation('Mesh From Heightmap', true)
-      t = Geom::Transformation.new(xaxis, yaxis, zaxis, origin)
-      g = bitmap_to_mesh(@dib, width, height, depth)
-      g.transformation = t
+      tr = Geom::Transformation.new(x_axis, y_axis, z_axis, origin)
+      group = bitmap_to_mesh(@dib, width, height, depth)
+      group.transformation = tr
       model.commit_operation
+      # Once the mesh is generated the tool is popped from the stack and
+      # returned to the previous tool.
       model.tools.pop_tool
     end
 
@@ -332,18 +324,21 @@ module TT::Plugins::BitmapToMesh
 
     def bitmap_to_mesh(dib, width, height, depth)
       model = Sketchup.active_model
-      # Dimensions
+
       step_x = width  / dib.width
       step_y = height / dib.height
       step_z = depth  / 255
-      # Process data
+
       puts "Bitmap To Mesh: (#{dib.provider})"
       puts "> Pixels: #{dib.width * dib.height} (#{dib.width}x#{dib.height})"
       puts "> Triangles: #{dib.width * dib.height * 2}"
       start_time = Time.now
 
-      # Read colour values and generate 3d points.
-      pts = []
+      # Read colour values and generate 3D points.
+      # TODO: Reuse logic in DIBRender. It dupliates the greyscale logic.
+      #       Additionally the down-sampling logic can be used, but need UI
+      #       allow the user to control max-sample size.
+      points = []
       progress = TT::Progressbar.new(dib.pixels, 'Reading Image')
       dib.height.times { |y|
         dib.width.times { |x|
@@ -351,44 +346,46 @@ module TT::Plugins::BitmapToMesh
           index = (dib.width * y) + x
           color = dib.data[index]
           # Generate a Point3d from pixel colour.
-          r,g,b = color
+          r, g, b = color
           if r == g && g == b
             average_color = r
           else
             # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865
-            average_color = (r * 0.3) + (g * 0.59) + (b * 0.11);
+            average_color = (r * 0.3) + (g * 0.59) + (b * 0.11)
           end
-          ptx = step_x * x
-          pty = step_y * y
-          ptz = step_z * average_color
-          pts << Geom::Point3d.new([ptx, pty, ptz])
+          point_x = step_x * x
+          point_y = step_y * y
+          point_z = step_z * average_color
+          points << Geom::Point3d.new(point_x, point_y, point_z)
         }
       }
-      total = pts.size.to_f
+      total = points.size.to_f
       puts "> Processing data took: #{Time.now - start_time}s"
 
       t = Time.now
       # (!) Bottleneck!
       # Populate the mesh with the point and build an vertex index.
-      progress = TT::Progressbar.new(pts, 'Indexing Points')
-      mesh = Geom::PolygonMesh.new(pts.size, pts.size * 2)
-      pi = []
-      pts.each_with_index { |pt, i|
+      progress = TT::Progressbar.new(points, 'Indexing Points')
+      mesh = Geom::PolygonMesh.new(points.size, points.size * 2)
+      mesh_indicies = []
+      points.each_with_index { |point, i|
         progress.next
         Sketchup.status_text = sprintf("Indexing points: %.1f%%", (i / total) * 100.0)
-        pi << mesh.add_point(pt)
+        mesh_indicies << mesh.add_point(point)
       }
       puts "> Indexing points took: #{Time.now - start_time}s"
 
       # Compute UV mapping:
+      # (!) Surprisingly this is even slower than add_point. Is this also doing
+      #     linear lookups?
       if mesh.respond_to?(:set_uv)
         t = Time.now
         w = dib.width
         h = dib.height
         u_step = 1.0 / dib.width.to_f
         v_step = 1.0 / dib.height.to_f
-        progress = TT::Progressbar.new(pts, 'Adding UV mapping')
-        pts.each_with_index { |pt, i|
+        progress = TT::Progressbar.new(points, 'Adding UV mapping')
+        points.each_with_index { |pt, i|
           progress.next
           Sketchup.status_text = sprintf("UV Mapping: %.1f%%", (i / total) * 100.0)
           y = i / h
@@ -409,13 +406,13 @@ module TT::Plugins::BitmapToMesh
           progress.next
           r = y * dib.width # Current row
           Sketchup.status_text = sprintf("Generating mesh: %.1f%%", ((x+r) / total) * 100.0)
-          # Pick out the indexes from the patch 2D-matrix we're interested in.
-          pos = [ x+r, x+1+r, x+dib.width+1+r, x+dib.width+r ]
-          # Get the point indexes and mirror orientation
-          indexes = pos.map { |i| pi[i] }
-          next unless indexes.length > 2
-          mesh.add_polygon([ indexes[0], indexes[1], indexes[2] ])
-          mesh.add_polygon([ indexes[0], indexes[2], indexes[3] ])
+          # Pick out the indicies from the patch 2D-matrix we're interested in.
+          point_indicies = [ x+r, x+1+r, x+dib.width+1+r, x+dib.width+r ]
+          # Get the point indicies and mirror orientation
+          indicies = point_indicies.map { |i| mesh_indicies[i] }
+          next unless indicies.length > 2
+          mesh.add_polygon(indicies[0], indicies[1], indicies[2])
+          mesh.add_polygon(indicies[0], indicies[2], indicies[3])
         }
       }
       puts "> Generating mesh took: #{Time.now - t}s"

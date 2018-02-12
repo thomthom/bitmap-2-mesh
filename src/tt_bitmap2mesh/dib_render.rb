@@ -121,7 +121,7 @@ module TT::Plugins::BitmapToMesh
         average_color = r
       else
         # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865
-        average_color = (r * 0.3) + (g * 0.59) + (b * 0.11);
+        average_color = (r * 0.3) + (g * 0.59) + (b * 0.11)
       end
       average_color
     end

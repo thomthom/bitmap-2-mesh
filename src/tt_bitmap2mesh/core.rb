@@ -27,6 +27,7 @@ rescue LoadError => e
 end
 
 
+require 'tt_bitmap2mesh/helpers/image'
 require 'tt_bitmap2mesh/debug'
 require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/place_mesh_tool'
@@ -80,7 +81,7 @@ module TT::Plugins::BitmapToMesh
     group = model.active_entities.add_group
     group.description = 'Mesh from Bitmap'
     progress = TT::Progressbar.new(bitmap.pixels, 'Mesh from Bitmap')
-    group.transform!(self.image_transformation(image))
+    group.transform!(Image.transformation(image))
     bitmap.height.times { |y|
       bitmap.width.times { |x|
         progress.next
@@ -100,23 +101,6 @@ module TT::Plugins::BitmapToMesh
       }
     }
     model.commit_operation
-  end
-
-
-  def self.image_transformation(image)
-    if image.respond_to?(:transformation)
-      return image.transformation
-    end
-    # (!) Doesn't handle flipped images correctly.
-    origin = image.origin
-    axes = image.normal.axes
-    x_scale = image.width / image.pixelwidth
-    y_scale = image.height / image.pixelheight
-    tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
-    tr_rotation = Geom::Transformation.rotation(ORIGIN, Z_AXIS, image.zrotation)
-    tr_axes = Geom::Transformation.axes(origin, axes.x, axes.y, axes.z)
-    tr = tr_axes * tr_rotation * tr_scaling
-    tr
   end
 
 

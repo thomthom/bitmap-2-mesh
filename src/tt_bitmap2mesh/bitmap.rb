@@ -11,19 +11,19 @@ require 'tt_bitmap2mesh/image/dib'
 
 
 module TT::Plugins::BitmapToMesh
-  # Generic interface that delegate to either the newer Image::ImageRep or the
-  # old Image::DIB interface. This done to keep compatibility with pre-SU2018
+  # Generic interface that delegate to either the newer ImageRep or the
+  # old DIB interface. This done to keep compatibility with pre-SU2018
   # versions.
   class Bitmap
 
-    FORCE_LEGACY = true # For testing the old interface in newer SU versions.
+    FORCE_LEGACY = false # For testing the old interface in newer SU versions.
 
     def self.from_image(image)
       if image.respond_to?(:image_rep) && !FORCE_LEGACY
         return self.new(image.image_rep)
       end
       dib = self.temp_image_file(image) { |temp_file|
-        Image::BMP.new(temp_file)
+        BMP.new(temp_file)
       }
       self.new(dib)
     end
@@ -45,13 +45,13 @@ module TT::Plugins::BitmapToMesh
     def initialize(source)
       if source.is_a?(String)
         if defined?(Sketchup::ImageRep) && !FORCE_LEGACY
-          @instance = Image::ImageRep.new(source)
+          @instance = ImageRep.new(source)
         else
-          @instance = Image::BMP.new(source)
+          @instance = BMP.new(source)
         end
       elsif defined?(Sketchup::ImageRep) && source.is_a?(Sketchup::ImageRep) && !FORCE_LEGACY
-        @instance = Image::ImageRep.new(source)
-      elsif source.is_a?(Image::BMP)
+        @instance = ImageRep.new(source)
+      elsif source.is_a?(BMP)
         @instance = source
       else
         raise TypeError

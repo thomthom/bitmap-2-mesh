@@ -66,7 +66,7 @@ module TT::Plugins::BitmapToMesh
       bounds
     end
 
-    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
+    # @return [Hash{Color => Array<Geom::Point3d>}]
     def compute_cache(samples)
       cached = {}
       samples.each { |color, quads|
@@ -77,7 +77,7 @@ module TT::Plugins::BitmapToMesh
       cached
     end
 
-    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
+    # @return [Hash{Color => Array<Geom::Point3d>}]
     def cache
       @cache ||= compute_cache(@samples)
       @cache
@@ -85,7 +85,7 @@ module TT::Plugins::BitmapToMesh
 
     # @param [Bitmap] bitmap
     # @param [Integer] max_sample_size
-    # @return [Hash{Image::Color => Array<Geom::Point3d>}]
+    # @return [Hash{Color => Array<Geom::Point3d>}]
     def sample(bitmap, max_sample_size)
       data = {}
       max_image_size = [bitmap.width, bitmap.height].max
@@ -117,7 +117,7 @@ module TT::Plugins::BitmapToMesh
       ]
     end
 
-    # @param [Image::Color] color
+    # @param [Color] color
     # @return [Float]
     def color_to_height(color)
       color.luminance / 255.0

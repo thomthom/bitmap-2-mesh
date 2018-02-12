@@ -8,7 +8,7 @@
 require 'tt_bitmap2mesh/image/color'
 
 
-module TT::Plugins::BitmapToMesh::Image
+module TT::Plugins::BitmapToMesh
   class Color < Sketchup::Color
 
     def is_greyscale?

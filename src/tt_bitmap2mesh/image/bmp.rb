@@ -8,7 +8,7 @@
 require 'tt_bitmap2mesh/image/dib'
 
 
-module TT::Plugins::BitmapToMesh::Image
+module TT::Plugins::BitmapToMesh
 
   # Supported BMP variants:
   # * Bit-depths: 32bit, 24bit, 16bit, 8bit, 4bit, 1bit

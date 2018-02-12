@@ -8,7 +8,7 @@
 require 'tt_bitmap2mesh/image/color'
 
 
-module TT::Plugins::BitmapToMesh::Image
+module TT::Plugins::BitmapToMesh
 
   # @data must be a hash where the key is a colour and the values are array of
   # points. This way the image data is drawn in the most efficient manner using

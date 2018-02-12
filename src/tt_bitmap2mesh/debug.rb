@@ -24,7 +24,8 @@ module TT::Plugins::BitmapToMesh
     load __FILE__
     # Supporting files
     if defined?(PATH) && File.exist?(PATH)
-      x = Dir.glob( File.join(PATH, '*.rb') ).each { |file|
+      pattern = File.join(PATH, '**/*.rb')
+      x = Dir.glob(pattern).each { |file|
         load file
       }
       x.length + 1

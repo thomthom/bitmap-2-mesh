@@ -5,6 +5,8 @@
 #
 #-------------------------------------------------------------------------------
 
+
+# Attempt to load TT_Lib or provide install instructions.
 begin
   require 'TT_Lib2/core.rb'
 rescue LoadError => e
@@ -49,6 +51,7 @@ module TT::Plugins::BitmapToMesh
         context_menu.add_item('Mesh From Bitmap')     { self.image_to_mesh }
       end
     }
+    file_loaded(__FILE__)
   end
 
 
@@ -135,14 +138,6 @@ module TT::Plugins::BitmapToMesh
   end
 
 
-
-
 end # module
 
 end # if TT_Lib
-
-#-------------------------------------------------------------------------------
-
-file_loaded( __FILE__ )
-
-#-------------------------------------------------------------------------------

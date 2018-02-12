@@ -16,15 +16,15 @@ module TT::Plugins::BitmapToMesh
   #
   # @return [Integer] Number of files reloaded.
   # @since 1.0.0
-  def self.reload( tt_lib = false )
+  def self.reload(tt_lib = false)
     original_verbose = $VERBOSE
     $VERBOSE = nil
     TT::Lib.reload if tt_lib
     # Core file (this)
     load __FILE__
     # Supporting files
-    if defined?( PATH ) && File.exist?( PATH )
-      x = Dir.glob( File.join(PATH, '*.{rb,rbs}') ).each { |file|
+    if defined?(PATH) && File.exist?(PATH)
+      x = Dir.glob( File.join(PATH, '*.rb') ).each { |file|
         load file
       }
       x.length + 1

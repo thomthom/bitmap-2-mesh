@@ -94,7 +94,7 @@ module TT::Plugins::BitmapToMesh
       return if length == 0
       case @state
       when S_RECT
-        pts = get_box()
+        pts = get_box
         vx = pts[0].vector_to(pts[1])
         if vx.valid?
           pt = @ip_start.position.offset(vx, length)
@@ -102,7 +102,7 @@ module TT::Plugins::BitmapToMesh
           @state = S_BOX
         end
       when S_BOX
-        pts = get_box()
+        pts = get_box
         normal = pts[0].vector_to(pts[4])
         unless normal.valid?
           vx = pts[0].vector_to(pts[1])
@@ -124,7 +124,7 @@ module TT::Plugins::BitmapToMesh
       #@ph = view.pick_helper(x, y)
       #@ph.do_pick(x, y)
       view.invalidate
-      update_ui()
+      update_ui
     end
 
     def onLButtonUp(flags, x, y, view)
@@ -135,7 +135,7 @@ module TT::Plugins::BitmapToMesh
         #bp = ph.best_picked
         #if bp.is_a?(Sketchup::Image)
         #  @image = bp
-        #  reset()
+        #  reset
         #else
           @ip_start.copy!(@ip_mouse)
           @state = S_RECT
@@ -228,7 +228,7 @@ module TT::Plugins::BitmapToMesh
 
     def getExtents
       bb = Geom::BoundingBox.new
-      pts = get_box()
+      pts = get_box
       pts.each { |pt|
         bb.add(pt)
       }
@@ -286,7 +286,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def generate_mesh
-      box = get_box()
+      box = get_box
       xaxis = box[0].vector_to(box[1])
       yaxis = box[0].vector_to(box[3])
       zaxis = box[0].vector_to(box[4])

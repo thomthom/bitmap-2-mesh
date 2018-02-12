@@ -11,6 +11,8 @@ require 'tt_bitmap2mesh/gl_dib'
 
 
 module TT::Plugins::BitmapToMesh
+  # Generic interface that delegate to either the newer DIBImageRep or the old
+  # GL_DIB interface. This done to keep compatibility with pre-SU2018 versions.
   class DIB
 
     def self.from_image(image)

@@ -14,7 +14,7 @@ module TT::Plugins::BitmapToMesh
   # Generic interface that delegate to either the newer Image::ImageRep or the
   # old Image::DIB interface. This done to keep compatibility with pre-SU2018
   # versions.
-  class DIB
+  class Bitmap
 
     FORCE_LEGACY = true # For testing the old interface in newer SU versions.
 

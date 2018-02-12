@@ -5,17 +5,17 @@
 #
 #-------------------------------------------------------------------------------
 
-require 'tt_bitmap2mesh/dib'
+require 'tt_bitmap2mesh/bitmap'
 
 
 module TT::Plugins::BitmapToMesh
-  class DIBRender
+  class BitmapRender
 
     # attr_accessor :transformation
     attr_reader :transformation
     attr_reader :height
 
-    # @param [DIB] dib
+    # @param [Bitmap] dib
     def initialize(dib, max_sample_size = 64)
       @dib = dib
       @transformation = Geom::Transformation.new

@@ -7,7 +7,7 @@
 
 
 module TT::Plugins::BitmapToMesh::Image
-  # Interface to expose ImageRep functionality in similar fashion to GL_DIB.
+  # Interface to expose ImageRep functionality in similar fashion to Image::DIB.
   class ImageRep
 
     def initialize(source)
@@ -17,7 +17,7 @@ module TT::Plugins::BitmapToMesh::Image
         @image_rep = source
       end
       # The rows from ImageRep needs to be reversed in order to be compatible
-      # with GL_DIB.
+      # with Image::DIB.
       @data = @image_rep.colors.each_slice(width).to_a.reverse.flatten.map(&:to_a)
     end
 

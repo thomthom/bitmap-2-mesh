@@ -28,7 +28,7 @@ end
 
 
 require 'tt_bitmap2mesh/debug'
-require 'tt_bitmap2mesh/dib'
+require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/place_mesh_tool'
 
 
@@ -71,37 +71,37 @@ module TT::Plugins::BitmapToMesh
     end
     return if filename.nil?
     # Load data.
-    dib = DIB.new(filename)
+    bitmap = Bitmap.new(filename)
     # Make the user pick the position of the mesh.
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib))
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(bitmap))
   end
 
 
   def self.heightmap_to_mesh
     model = Sketchup.active_model
     image = model.selection[0]
-    dib = DIB.from_image(image)
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(dib, image))
+    bitmap = Bitmap.from_image(image)
+    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(bitmap, image))
   end
 
 
   def self.image_to_mesh
     model = Sketchup.active_model
     image = model.selection[0]
-    dib = DIB.from_image(image)
+    bitmap = Bitmap.from_image(image)
 
     size_x = image.width / image.pixelwidth
     size_y = image.height / image.pixelheight
     model.start_operation('Mesh From Bitmap', true)
       g = model.active_entities.add_group
       g.description = 'Mesh from Bitmap'
-      progress = TT::Progressbar.new(dib.pixels, 'Mesh from Bitmap')
+      progress = TT::Progressbar.new(bitmap.pixels, 'Mesh from Bitmap')
       g.transform!(self.image_transformation(image))
-      dib.height.times { |y|
-        dib.width.times { |x|
+      bitmap.height.times { |y|
+        bitmap.width.times { |x|
           progress.next
-          index = (dib.width * y) + x
-          color = dib.data[index]
+          index = (bitmap.width * y) + x
+          color = bitmap.data[index]
           # Generate a Point3d from pixel colour.
           left  = x * size_x
           top   = y * size_y

@@ -5,8 +5,8 @@
 #
 #-------------------------------------------------------------------------------
 
-require 'tt_bitmap2mesh/dib'
-require 'tt_bitmap2mesh/dib_render'
+require 'tt_bitmap2mesh/bitmap'
+require 'tt_bitmap2mesh/bitmap_render'
 
 
 module TT::Plugins::BitmapToMesh
@@ -18,12 +18,12 @@ module TT::Plugins::BitmapToMesh
       PICK_HEIGHT = 2
     end
 
-    def initialize(dib, image = nil)
-      @dib = dib
-      @ratio = dib.width.to_f / dib.height.to_f # TODO: Make property of DIB.
+    def initialize(bitmap, image = nil)
+      @bitmap = bitmap
+      @ratio = bitmap.width.to_f / bitmap.height.to_f # TODO: Make property of Bitmap.
 
       # Renders low-res preview of the heightmap.
-      @dib_render = DIBRender.new(@dib)
+      @bitmap_render = BitmapRender.new(@bitmap)
 
       # The Sketchup::Image entity to generate the mesh from.
       @image = image
@@ -171,7 +171,7 @@ module TT::Plugins::BitmapToMesh
           end
           tr_scale = Geom::Transformation.scaling(scale, scale, scale_z)
           tr_origin = Geom::Transformation.new(box[0], x_axis, y_axis)
-          @dib_render.transformation = tr_origin * tr_scale
+          @bitmap_render.transformation = tr_origin * tr_scale
         end
       end
     end
@@ -185,7 +185,7 @@ module TT::Plugins::BitmapToMesh
         xaxis = box[0].vector_to(box[1])
         yaxis = box[0].vector_to(box[3])
         if xaxis.valid? && yaxis.valid?
-          @dib_render.draw(view)
+          @bitmap_render.draw(view)
         end
       end
 
@@ -288,7 +288,7 @@ module TT::Plugins::BitmapToMesh
       model = Sketchup.active_model
       model.start_operation('Mesh From Heightmap', true)
       tr = Geom::Transformation.new(x_axis, y_axis, z_axis, origin)
-      group = bitmap_to_mesh(@dib, width, height, depth)
+      group = bitmap_to_mesh(@bitmap, width, height, depth)
       group.transformation = tr
       model.commit_operation
       # Once the mesh is generated the tool is popped from the stack and
@@ -315,7 +315,7 @@ module TT::Plugins::BitmapToMesh
       if image.respond_to?(:image_rep)
         material.texture = image.image_rep
       else
-        DIB.temp_image_file(image) { |temp_file|
+        Bitmap.temp_image_file(image) { |temp_file|
           material.texture = temp_image_file
         }
       end
@@ -335,7 +335,7 @@ module TT::Plugins::BitmapToMesh
       start_time = Time.now
 
       # Read colour values and generate 3D points.
-      # TODO: Reuse logic in DIBRender. It dupliates the greyscale logic.
+      # TODO: Reuse logic in BitmapRender. It dupliates the greyscale logic.
       #       Additionally the down-sampling logic can be used, but need UI
       #       allow the user to control max-sample size.
       points = []

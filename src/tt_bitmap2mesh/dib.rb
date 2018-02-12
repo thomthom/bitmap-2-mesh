@@ -21,14 +21,32 @@ module TT::Plugins::BitmapToMesh
       if image.respond_to?(:image_rep) && !FORCE_LEGACY
         return self.new(image.image_rep)
       end
+      # temp_path = File.expand_path(TT::System.temp_path)
+      # temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
+      # tw = Sketchup.create_texture_writer
+      # tw.load(image)
+      # tw.write(image, temp_file)
+      # temp_file = self.create_temp_image(image)
+      # dib = GL_BMP.new(temp_file)
+      # File.delete(temp_file)
+      dib = self.temp_image_file(image) { |temp_file|
+        GL_BMP.new(temp_file)
+      }
+      self.new(dib)
+    end
+
+    def self.temp_image_file(image, &block)
       temp_path = File.expand_path(TT::System.temp_path)
       temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
       tw = Sketchup.create_texture_writer
       tw.load(image)
       tw.write(image, temp_file)
-      dib = GL_BMP.new(temp_file)
-      File.delete(temp_file)
-      self.new(dib)
+      begin
+        result = block.call(temp_file)
+      ensure
+        File.delete(temp_file) if File.exist?(temp_file)
+      end
+      result
     end
 
     def initialize(source)

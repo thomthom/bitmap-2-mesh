@@ -5,6 +5,7 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'tt_bitmap2mesh/dib'
 require 'tt_bitmap2mesh/dib_render'
 
 
@@ -303,6 +304,32 @@ module TT::Plugins::BitmapToMesh
       model.tools.pop_tool
     end
 
+    def get_image_definition(image)
+      image.model.definitions.each { |definition|
+        if definition.image? && definition.instances.include?(image)
+          return definition
+        end
+      }
+      nil
+    end
+
+    def get_image_material(image)
+      definition = get_image_definition(image)
+      material_name = "b2m_#{definition.name}"
+      model = image.model
+      material = model.materials[material_name]
+      return material if material
+      material = model.materials.add(material_name)
+      if image.respond_to?(:image_rep)
+        material.texture = image.image_rep
+      else
+        DIB.temp_image_file(image) { |temp_file|
+          material.texture = temp_image_file
+        }
+      end
+      material
+    end
+
     def bitmap_to_mesh(dib, width, height, depth)
       model = Sketchup.active_model
       # Dimensions
@@ -310,8 +337,11 @@ module TT::Plugins::BitmapToMesh
       step_y = height / dib.height
       step_z = depth  / 255
       # Process data
-      puts 'Bitmap To Mesh:'
+      puts "Bitmap To Mesh: (#{dib.provider})"
+      puts "> Pixels: #{dib.width * dib.height} (#{dib.width}x#{dib.height})"
+      puts "> Triangles: #{dib.width * dib.height * 2}"
       start_time = Time.now
+
       # Read colour values and generate 3d points.
       pts = []
       progress = TT::Progressbar.new(dib.pixels, 'Reading Image')
@@ -336,6 +366,7 @@ module TT::Plugins::BitmapToMesh
       }
       total = pts.size.to_f
       puts "> Processing data took: #{Time.now - start_time}s"
+
       t = Time.now
       # (!) Bottleneck!
       # Populate the mesh with the point and build an vertex index.
@@ -348,6 +379,28 @@ module TT::Plugins::BitmapToMesh
         pi << mesh.add_point(pt)
       }
       puts "> Indexing points took: #{Time.now - start_time}s"
+
+      # Compute UV mapping:
+      if mesh.respond_to?(:set_uv)
+        t = Time.now
+        w = dib.width
+        h = dib.height
+        u_step = 1.0 / dib.width.to_f
+        v_step = 1.0 / dib.height.to_f
+        progress = TT::Progressbar.new(pts, 'Adding UV mapping')
+        pts.each_with_index { |pt, i|
+          progress.next
+          Sketchup.status_text = sprintf("UV Mapping: %.1f%%", (i / total) * 100.0)
+          y = i / h
+          x = i - (h * y)
+          u = x * u_step
+          v = y * v_step
+          uv = Geom::Point3d.new(u, v, 0)
+          mesh.set_uv(i + 1, uv, true)
+        }
+        puts "> UV mapping took: #{Time.now - start_time}s"
+      end
+
       t = Time.now
       # Generate the mesh
       progress = TT::Progressbar.new(dib.pixels, 'Generating Mesh')
@@ -366,11 +419,18 @@ module TT::Plugins::BitmapToMesh
         }
       }
       puts "> Generating mesh took: #{Time.now - t}s"
+
       t = Time.now
       Sketchup.status_text = 'Filling group with mesh...'
       # Add the geometry to the model
       group = model.active_entities.add_group
-      group.entities.fill_from_mesh(mesh, true, 12)
+      flags = 4 | 8 # AUTO_SOFTEN | SMOOTH_SOFT_EDGES
+      if mesh.respond_to?(:set_uv)
+        material = get_image_material(@image)
+        group.entities.fill_from_mesh(mesh, true, flags, material)
+      else
+        group.entities.fill_from_mesh(mesh, true, flags)
+      end
       puts "> Filling mesh took: #{Time.now - t}s"
       puts "Total time: #{Time.now - start_time}s"
       group

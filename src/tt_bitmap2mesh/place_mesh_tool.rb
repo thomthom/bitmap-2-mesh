@@ -261,7 +261,7 @@ module TT::Plugins::BitmapToMesh
         # Create a line in the direction of the image's normal. We'll use the
         # image's origin as an arbitrary reference point. (Could easily have
         # been something like the centre.)
-        image_ray = [@image.origin, @image.normal]
+        image_ray = [pt1, Z_AXIS]
         # From that we find the closest point to the image which will define the
         # height of the height mesh.
         pt5, pt_pick = Geom.closest_points(image_ray, pick_ray)
@@ -320,6 +320,21 @@ module TT::Plugins::BitmapToMesh
         }
       end
       material
+    end
+
+    def create_material(bitmap)
+      material_name = "b2m_image"
+      model = Sketchup.active_model
+      material = model.materials.add(material_name)
+      bitmap.temp_file { |temp_file|
+        material.texture = temp_file
+      }
+      material
+    end
+
+    def get_material(image, bitmap)
+      # TODO: Clean up this kludgy mess!
+      image ? get_image_material(image) : create_material(bitmap)
     end
 
     def bitmap_to_mesh(bitmap, width, height, depth)
@@ -416,7 +431,7 @@ module TT::Plugins::BitmapToMesh
       group = model.active_entities.add_group
       flags = 4 | 8 # AUTO_SOFTEN | SMOOTH_SOFT_EDGES
       if mesh.respond_to?(:set_uv)
-        material = get_image_material(@image)
+        material = get_material(@image, @bitmap)
         group.entities.fill_from_mesh(mesh, true, flags, material)
       else
         group.entities.fill_from_mesh(mesh, true, flags)

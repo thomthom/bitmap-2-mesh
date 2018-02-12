@@ -43,5 +43,9 @@ module TT::Plugins::BitmapToMesh
       @image_rep.height
     end
 
+    def save(filename)
+      @image_rep.save_file(filename)
+    end
+
   end # class
 end # module

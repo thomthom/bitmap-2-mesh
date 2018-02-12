@@ -83,5 +83,17 @@ module TT::Plugins::BitmapToMesh
       data[index]
     end
 
+    def temp_file(&block)
+      temp_path = File.expand_path(TT::System.temp_path)
+      temp_filename = File.join(temp_path, 'TT_BMP2Mesh.bmp')
+      @instance.save(temp_filename)
+      begin
+        result = block.call(temp_filename)
+      ensure
+        File.delete(temp_filename) if File.exist?(temp_filename)
+      end
+      result
+    end
+
   end # module
 end # module

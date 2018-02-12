@@ -294,12 +294,13 @@ module TT::Plugins::BitmapToMesh
       height = yaxis.length
       depth  = zaxis.length
       origin = box[0]
-      TT::Model.start_operation('Mesh From Heightmap')
+      model = Sketchup.active_model
+      model.start_operation('Mesh From Heightmap', true)
       t = Geom::Transformation.new(xaxis, yaxis, zaxis, origin)
       g = bitmap_to_mesh(@dib, width, height, depth)
       g.transformation = t
-      Sketchup.active_model.commit_operation
-      Sketchup.active_model.tools.pop_tool
+      model.commit_operation
+      model.tools.pop_tool
     end
 
     def bitmap_to_mesh(dib, width, height, depth)

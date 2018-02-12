@@ -261,8 +261,14 @@ module TT::Plugins::BitmapToMesh
       end
 
       if @state == S_BOX
-        mp = @ip_mouse.position
-        pt5 = mp.project_to_line([pt1, vz])
+        # HACK(thomthom): Clean this up. Get pick_rway from mouse event.
+        view = Sketchup.active_model.active_view
+        pick_ray = [view.camera.eye, @ip_mouse.position]
+        image_ray = [@image.origin, @image.normal]
+        pt5, pt_pick = Geom.closest_points(image_ray, pick_ray)
+
+        # mp = @ip_mouse.position
+        # pt5 = mp.project_to_line([pt1, vz])
         depth = pt1.vector_to(pt5)
         pt6 = pt2.offset(depth)
         pt7 = pt3.offset(depth)

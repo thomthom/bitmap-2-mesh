@@ -75,28 +75,22 @@ module TT::Plugins::BitmapToMesh
 
   def self.image_to_mesh(image)
     bitmap = Bitmap.from_image(image)
-
-    size_x = image.width / image.pixelwidth
-    size_y = image.height / image.pixelheight
     model = Sketchup.active_model
     model.start_operation('Mesh From Bitmap', true)
-      g = model.active_entities.add_group
-      g.description = 'Mesh from Bitmap'
+    group = model.active_entities.add_group
+    group.description = 'Mesh from Bitmap'
     progress = TT::Progressbar.new(bitmap.pixels, 'Mesh from Bitmap')
-      g.transform!(self.image_transformation(image))
+    group.transform!(self.image_transformation(image))
     bitmap.height.times { |y|
       bitmap.width.times { |x|
         progress.next
         index = (bitmap.width * y) + x
         color = bitmap.data[index]
-          # Generate a Point3d from pixel colour.
-          left  = x * size_x
-          top   = y * size_y
-          pts = [
-            [left, top, 0],
-            [left + size_x, top, 0],
-            [left + size_x, top + size_y, 0],
-            [left, top + size_y, 0]
+        points = [
+          [x,     y,     0],
+          [x + 1, y,     0],
+          [x + 1, y + 1, 0],
+          [x,     y + 1, 0]
         ]
         face = group.entities.add_face(points)
         # Ensure face's front side is oriented upwards. SketchUp will try to
@@ -104,7 +98,7 @@ module TT::Plugins::BitmapToMesh
         face.reverse! unless face.normal.samedirection?(Z_AXIS)
         face.material = color
       }
-      }
+    }
     model.commit_operation
   end
 
@@ -116,13 +110,13 @@ module TT::Plugins::BitmapToMesh
     # (!) Doesn't handle flipped images correctly.
     origin = image.origin
     axes = image.normal.axes
-    tr = Geom::Transformation.axes(ORIGIN, axes.x, axes.y, axes.z)
-    tr = tr * Geom::Transformation.rotation(ORIGIN, Z_AXIS, image.zrotation)
-    tr = (tr * Geom::Transformation.scaling(ORIGIN, 1, 1, 1)).to_a
-    tr[12] = origin.x
-    tr[13] = origin.y
-    tr[14] = origin.z
-    Geom::Transformation.new(tr)
+    x_scale = image.width / image.pixelwidth
+    y_scale = image.height / image.pixelheight
+    tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
+    tr_rotation = Geom::Transformation.rotation(ORIGIN, Z_AXIS, image.zrotation)
+    tr_axes = Geom::Transformation.axes(origin, axes.x, axes.y, axes.z)
+    tr = tr_axes * tr_rotation * tr_scaling
+    tr
   end
 
 

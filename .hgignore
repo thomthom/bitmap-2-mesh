@@ -1,4 +1,0 @@
-syntax: glob
-Archive/*
-Test Models/*
-*.sublime-*

@@ -37,6 +37,12 @@ if defined?(TT::Lib) && TT::Lib.compatible?('2.7.0', 'Bitmap to Mesh')
 
 module TT::Plugins::BitmapToMesh
 
+  # Sketchup.write_default("tt_bitmap2mesh", "DebugMode", true)
+  if Sketchup.read_default(PLUGIN_ID, "DebugMode", false)
+    require 'tt_bitmap2mesh/debug_tools'
+  end
+
+
   unless file_loaded?(__FILE__)
     menu = UI.menu('Draw')
     menu.add_item('Mesh From Heightmap')  { self.bitmap_to_mesh_tool }
@@ -64,13 +70,17 @@ module TT::Plugins::BitmapToMesh
     end
     return if filename.nil?
     bitmap = Bitmap.new(filename)
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(bitmap))
+    tool = PlaceMeshTool.new(bitmap)
+    Sketchup.active_model.tools.push_tool(tool)
+    tool
   end
 
 
   def self.heightmap_to_mesh(image)
     bitmap = Bitmap.from_image(image)
-    Sketchup.active_model.tools.push_tool(PlaceMeshTool.new(bitmap, image))
+    tool = PlaceMeshTool.new(bitmap, image)
+    Sketchup.active_model.tools.push_tool(tool)
+    tool
   end
 
 

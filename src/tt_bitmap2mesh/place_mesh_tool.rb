@@ -354,6 +354,10 @@ module TT::Plugins::BitmapToMesh
       #       Additionally the down-sampling logic can be used, but need UI
       #       allow the user to control max-sample size.
       points = []
+      w = bitmap.width
+      h = bitmap.height
+      u_step = 1.0 / bitmap.width.to_f
+      v_step = 1.0 / bitmap.height.to_f
       # progress = TT::Progressbar.new(bitmap.pixels, 'Reading Image')
       bitmap.height.times { |y|
         bitmap.width.times { |x|
@@ -380,31 +384,34 @@ module TT::Plugins::BitmapToMesh
         # progress.next
         # Sketchup.status_text = sprintf("Indexing points: %.1f%%", (i / total) * 100.0)
         mesh_indicies << mesh.add_point(point)
+
+        y = i / h
+        x = i - (h * y)
+        u = x * u_step
+        v = y * v_step
+        mesh.set_uv(i + 1, [u, v, 0], true)
       }
       puts "> Indexing points took: #{Time.now - start_time}s"
 
       # Compute UV mapping:
-      # (!) Surprisingly this is even slower than add_point. Is this also doing
-      #     linear lookups?
-      if mesh.respond_to?(:set_uv)
-        t = Time.now
-        w = bitmap.width
-        h = bitmap.height
-        u_step = 1.0 / bitmap.width.to_f
-        v_step = 1.0 / bitmap.height.to_f
-        # progress = TT::Progressbar.new(points, 'Adding UV mapping')
-        points.each_with_index { |pt, i|
-          # progress.next
-          # Sketchup.status_text = sprintf("UV Mapping: %.1f%%", (i / total) * 100.0)
-          y = i / h
-          x = i - (h * y)
-          u = x * u_step
-          v = y * v_step
-          uv = Geom::Point3d.new(u, v, 0)
-          mesh.set_uv(i + 1, uv, true)
-        }
-        puts "> UV mapping took: #{Time.now - t}s"
-      end
+      #   t = Time.now
+      #   w = bitmap.width
+      #   h = bitmap.height
+      #   u_step = 1.0 / bitmap.width.to_f
+      #   v_step = 1.0 / bitmap.height.to_f
+      #   # progress = TT::Progressbar.new(points, 'Adding UV mapping')
+      #   points.each_with_index { |pt, i|
+      #     # progress.next
+      #     # Sketchup.status_text = sprintf("UV Mapping: %.1f%%", (i / total) * 100.0)
+      #     y = i / h
+      #     x = i - (h * y)
+      #     u = x * u_step
+      #     v = y * v_step
+      #     uv = Geom::Point3d.new(u, v, 0)
+      #     mesh.set_uv(i + 1, uv, true)
+      #   }
+      #   puts "> UV mapping took: #{Time.now - t}s"
+      # end
 
       t = Time.now
       # Generate the mesh

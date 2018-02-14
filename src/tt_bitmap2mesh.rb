@@ -19,7 +19,7 @@ module BitmapToMesh
   folder_name = File.basename(file, '.*')
 
   # Plugin information
-  PLUGIN_ID       = File.basename(__FILE__).freeze
+  PLUGIN_ID       = File.basename(__FILE__, '.*').freeze
   PLUGIN_NAME     = 'Bitmap to Mesh'.freeze
   PLUGIN_VERSION  = '0.6.0'.freeze
 

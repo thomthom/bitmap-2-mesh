@@ -403,7 +403,7 @@ module TT::Plugins::BitmapToMesh
           uv = Geom::Point3d.new(u, v, 0)
           mesh.set_uv(i + 1, uv, true)
         }
-        puts "> UV mapping took: #{Time.now - start_time}s"
+        puts "> UV mapping took: #{Time.now - t}s"
       end
 
       t = Time.now

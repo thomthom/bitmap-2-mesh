@@ -12,8 +12,11 @@ module TT::Plugins::BitmapToMesh
     model = Sketchup.active_model
     image = model.selection.grep(Sketchup::Image).first
     tool = self.heightmap_to_mesh(image)
+    ip = Sketchup::InputPoint.new(image.origin.offset(Z_AXIS, 2.m))
+    ip_mouse = tool.instance_variable_get(:@ip_mouse)
+    ip_mouse.copy!(ip)
     SpeedUp.profile {
-      tool.onUserText(-2.m, model.active_view)
+      tool.onUserText(2.m, model.active_view)
     }
   end
 

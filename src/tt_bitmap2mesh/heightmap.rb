@@ -5,9 +5,6 @@
 #
 #-------------------------------------------------------------------------------
 
-require 'tt_bitmap2mesh/image/bmp'
-
-
 module TT::Plugins::BitmapToMesh
   class HeightmapMesh
 

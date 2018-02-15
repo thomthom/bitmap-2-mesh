@@ -58,6 +58,14 @@ module TT::Plugins::BitmapToMesh
       end
     end
 
+    def create_material(model, name = "b2m_image")
+      material = model.materials.add(name)
+      temp_file { |temp_file|
+        material.texture = temp_file
+      }
+      material
+    end
+
     def provider
       @instance.class
     end

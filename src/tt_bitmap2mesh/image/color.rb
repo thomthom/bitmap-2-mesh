@@ -15,8 +15,9 @@ module TT::Plugins::BitmapToMesh
       red == green && green == blue
     end
 
+    # @return [Integer] Value between 0 - 255
     def luminance
-      return red if is_greyscale?
+      # return red if is_greyscale?
       # Colorimetric conversion to greyscale.
       # Original:
       # http://forums.sketchucation.com/viewtopic.php?t=12368#p88865

@@ -438,6 +438,7 @@ module TT::Plugins::BitmapToMesh
       group = model.active_entities.add_group
       flags = 4 | 8 # AUTO_SOFTEN | SMOOTH_SOFT_EDGES
       if mesh.respond_to?(:set_uv)
+        # material = image ? Image.clone_material(image) : Bitmap.create_material(model)
         material = get_material(@image, @bitmap)
         group.entities.fill_from_mesh(mesh, true, flags, material)
       else

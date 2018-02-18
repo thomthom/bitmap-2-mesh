@@ -33,9 +33,15 @@ module TT::Plugins::BitmapToMesh
       bitmap_width = bitmap.width # Cache - avoid repeated method call.
       bitmap_height = bitmap.height # Cache - avoid repeated method call.
 
+      # Given a 100x100 pixel image 99x99 quads will be produced, twice as many
+      # triangles.
+      num_polygons = (bitmap_width - 1) * (bitmap_height - 1) * 2
+      num_points = bitmap_width * bitmap_height
+
       log "Bitmap To Mesh: (#{bitmap.provider})"
-      log "> Pixels: #{bitmap.width * bitmap.height} (#{bitmap.width}x#{bitmap.height})"
-      log "> Triangles: #{bitmap.width * bitmap.height * 2}"
+      log "> Pixels: #{num_points} (#{bitmap_width}x#{bitmap_height})"
+      log "> Vertices: #{num_points}"
+      log "> Triangles: #{num_polygons}"
       start_time = Time.now
 
       # Read colour values and generate 3D points.
@@ -63,11 +69,6 @@ module TT::Plugins::BitmapToMesh
       v_step = 1.0 / bitmap.height.to_f
       # (!) Progressbar and Sketchup.status_bar impact performance.
       # progress = TT::Progressbar.new(points, 'Indexing Points')
-      # Given a 100x100 pixel image 99x99 quads will be produced, twice as many
-      # triangles.
-      num_polygons = (w - 1) * (h - 1) * 2
-      num_points = points.size
-      puts "Points: #{num_points}, Polygons: #{num_polygons}"
       mesh = Geom::PolygonMesh.new(num_points, num_polygons)
       uv_map = material && mesh.respond_to?(:set_uv)
       mesh_indicies = []

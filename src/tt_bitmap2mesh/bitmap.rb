@@ -86,6 +86,10 @@ module TT::Plugins::BitmapToMesh
       @instance.height
     end
 
+    def ratio
+      @instance.width.to_f / @instance.height.to_f
+    end
+
     def [](x, y)
       index = (width * y) + x
       data[index]

@@ -23,7 +23,6 @@ module TT::Plugins::BitmapToMesh
 
     def initialize(bitmap, image = nil)
       @bitmap = bitmap
-      @ratio = bitmap.width.to_f / bitmap.height.to_f # TODO: Make property of Bitmap.
 
       # Renders low-res preview of the heightmap.
       @bitmap_render = BitmapRender.new(@bitmap)
@@ -229,7 +228,7 @@ module TT::Plugins::BitmapToMesh
         # This defines the width of the boundingbox from where we can also
         # infere the height.
         width = pt1.distance(pt2)
-        height = width / @ratio
+        height = width / @bitmap.ratio
         # Now we have all the info needed to compute the remaining points of
         # the lower rectangle.
         pt3 = pt2.offset(y_axis, height)

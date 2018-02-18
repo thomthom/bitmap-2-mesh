@@ -8,6 +8,7 @@
 require 'tt_bitmap2mesh/helpers/image'
 require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/bitmap_render'
+require 'tt_bitmap2mesh/bounding_box'
 require 'tt_bitmap2mesh/heightmap'
 
 
@@ -77,13 +78,11 @@ module TT::Plugins::BitmapToMesh
       when State::PICK_IMAGE_SIZE
         Sketchup.status_text = 'Pick width.'
         Sketchup.vcb_label = 'Width:'
-        points = get_bounding_points
-        Sketchup.vcb_value = points[0].distance(points[1])
+        Sketchup.vcb_value = get_bounding_box.width
       when State::PICK_HEIGHT
         Sketchup.status_text = 'Pick depth.'
         Sketchup.vcb_label = 'Depth:'
-        points = get_bounding_points
-        Sketchup.vcb_value = points[0].distance(points[4])
+        Sketchup.vcb_value = get_bounding_box.depth
       end
     end
 
@@ -105,16 +104,14 @@ module TT::Plugins::BitmapToMesh
       return if length == 0
       case @state
       when State::PICK_IMAGE_SIZE
-        points = get_bounding_points
-        x_axis = points[0].vector_to(points[1])
+        x_axis = get_bounding_box.x_axis
         if x_axis.valid?
           point = @ip_start.position.offset(x_axis, length)
           @ip_rect = Sketchup::InputPoint.new(point)
           @state = State::PICK_HEIGHT
         end
       when State::PICK_HEIGHT
-        points = get_bounding_points
-        z_axis = points[0].vector_to(points[4])
+        z_axis = get_bounding_box.z_axis
         unless z_axis.valid?
           x_axis = points[0].vector_to(points[1])
           y_axis = points[0].vector_to(points[3])
@@ -155,16 +152,16 @@ module TT::Plugins::BitmapToMesh
     end
 
     def update_dib_render_transformation
-      box = get_bounding_points
+      box = get_bounding_box
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
-        x_axis = box[0].vector_to(box[1])
-        y_axis = box[0].vector_to(box[3])
+        x_axis = box.x_axis
+        y_axis = box.y_axis
         if x_axis.valid? && y_axis.valid?
           # TODO: Cache transformation.
           box_size = [x_axis.length, y_axis.length].max
           scale = box_size.to_f / 64.0
           if @state == State::PICK_HEIGHT
-            z_axis = box[0].vector_to(box[4])
+            z_axis = box.z_axis
             scale_z = z_axis.length
             # Check direction:
             dot = (x_axis * y_axis) % z_axis
@@ -173,7 +170,7 @@ module TT::Plugins::BitmapToMesh
             scale_z = 0
           end
           tr_scale = Geom::Transformation.scaling(scale, scale, scale_z)
-          tr_origin = Geom::Transformation.new(box[0], x_axis, y_axis)
+          tr_origin = Geom::Transformation.new(box.origin, x_axis, y_axis)
           @bitmap_render.transformation = tr_origin * tr_scale
         end
       end
@@ -182,40 +179,21 @@ module TT::Plugins::BitmapToMesh
     def draw(view)
       @ip_mouse.draw(view) if @ip_mouse.valid?
 
-      box = get_bounding_points
-
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
-        xaxis = box[0].vector_to(box[1])
-        yaxis = box[0].vector_to(box[3])
-        if xaxis.valid? && yaxis.valid?
-          @bitmap_render.draw(view)
-        end
-      end
+        box = get_bounding_box
 
-      view.line_width = 2
-      view.line_stipple = ''
-      view.drawing_color = [255,0,0]
+        @bitmap_render.draw(view) if box.have_area?
 
-      if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
-        view.draw(GL_LINE_LOOP, box[0..3])
-      end
-
-      if @state == State::PICK_HEIGHT
-        view.draw(GL_LINE_LOOP, box[4..7])
-
-        connectors = [
-          box[0], box[4],
-          box[1], box[5],
-          box[2], box[6],
-          box[3], box[7]
-        ]
-        view.draw(GL_LINES, connectors)
+        view.line_width = 2
+        view.line_stipple = ''
+        view.drawing_color = [255,0,0]
+        box.draw(view)
       end
     end
 
     def getExtents
       bounds = Geom::BoundingBox.new
-      get_bounding_points.each { |point| bounds.add(point) }
+      get_bounding_box.points.each { |point| bounds.add(point) }
       bounds
     end
 
@@ -223,7 +201,7 @@ module TT::Plugins::BitmapToMesh
     # done with these points. This would be a class that is different from
     # Geom::BoundingBox because it should represent the orientation in model
     # space.
-    def get_bounding_points
+    def get_bounding_box
       points = []
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         if @image
@@ -280,23 +258,22 @@ module TT::Plugins::BitmapToMesh
         upper_rectangle = [pt5, pt6, pt7, pt8]
         points.concat(upper_rectangle)
       end
-      points
+      BoundingBox.new(points)
     end
 
     def generate_mesh
-      box = get_bounding_points
-      x_axis = box[0].vector_to(box[1])
-      y_axis = box[0].vector_to(box[3])
-      z_axis = box[0].vector_to(box[4])
+      box = get_bounding_box
+      x_axis = box.x_axis
+      y_axis = box.y_axis
+      z_axis = box.z_axis
 
-      origin = box[0]
       # Compute the X and Y scale based on the bitmap's width and height minus
       # one because; a 100x100 pixel image produce 99x99 faces.
       x_scale = x_axis.length / (@bitmap.width - 1)
       y_scale = y_axis.length / (@bitmap.height - 1)
       height  = z_axis.length
       tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
-      tr_axes = Geom::Transformation.axes(origin, x_axis, y_axis, z_axis)
+      tr_axes = Geom::Transformation.axes(box.origin, x_axis, y_axis, z_axis)
       transformation = tr_axes * tr_scaling
 
       model = Sketchup.active_model

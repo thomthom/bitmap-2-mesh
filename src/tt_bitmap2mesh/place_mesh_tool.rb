@@ -60,8 +60,6 @@ module TT::Plugins::BitmapToMesh
         tr = Image.transformation(@image)
         point = tr.origin.offset(tr.xaxis, @image.width)
         point.offset!(tr.yaxis, @image.height)
-        # point = @image.origin.offset(@image.normal.axes.x, @image.width)
-        # point.offset!(@image.normal.axes.y, @image.height)
         @ip_rect = Sketchup::InputPoint.new(point)
         @state = State::PICK_HEIGHT
       end
@@ -292,8 +290,10 @@ module TT::Plugins::BitmapToMesh
       z_axis = box[0].vector_to(box[4])
 
       origin = box[0]
-      x_scale = x_axis.length / @bitmap.width
-      y_scale = y_axis.length / @bitmap.height
+      # Compute the X and Y scale based on the bitmap's width and height minus
+      # one because; a 100x100 pixel image produce 99x99 faces.
+      x_scale = x_axis.length / (@bitmap.width - 1)
+      y_scale = y_axis.length / (@bitmap.height - 1)
       height  = z_axis.length
       tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
       tr_axes = Geom::Transformation.axes(origin, x_axis, y_axis, z_axis)

@@ -63,7 +63,12 @@ module TT::Plugins::BitmapToMesh
       v_step = 1.0 / bitmap.height.to_f
       # (!) Progressbar and Sketchup.status_bar impact performance.
       # progress = TT::Progressbar.new(points, 'Indexing Points')
-      mesh = Geom::PolygonMesh.new(points.size, points.size * 2)
+      # Given a 100x100 pixel image 99x99 quads will be produced, twice as many
+      # triangles.
+      num_polygons = (w - 1) * (h - 1) * 2
+      num_points = points.size
+      puts "Points: #{num_points}, Polygons: #{num_polygons}"
+      mesh = Geom::PolygonMesh.new(num_points, num_polygons)
       uv_map = material && mesh.respond_to?(:set_uv)
       mesh_indicies = []
       points.each_with_index { |point, i|
@@ -83,8 +88,8 @@ module TT::Plugins::BitmapToMesh
       t = Time.now
       # Generate the mesh
       # progress = TT::Progressbar.new(bitmap.pixels, 'Generating Mesh')
-      columns = bitmap.width - 2
-      rows = bitmap.height - 2
+      columns = bitmap.width - 1
+      rows = bitmap.height - 1
       rows.times { |y|
         columns.times { |x|
           # progress.next

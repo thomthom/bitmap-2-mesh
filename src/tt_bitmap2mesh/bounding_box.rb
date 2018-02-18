@@ -6,6 +6,8 @@
 #-------------------------------------------------------------------------------
 
 module TT::Plugins::BitmapToMesh
+  # This class is different from Geom::BoundingBox because it should represent
+  # the orientation in model space.
   class BoundingBox
 
     BOTTOM_FRONT_LEFT  = 0

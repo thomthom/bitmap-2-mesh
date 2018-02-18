@@ -185,7 +185,7 @@ module TT::Plugins::BitmapToMesh
 
         view.line_width = 2
         view.line_stipple = ''
-        view.drawing_color = [255,0,0]
+        view.drawing_color = [255, 0, 0]
         box.draw(view)
       end
     end
@@ -196,10 +196,8 @@ module TT::Plugins::BitmapToMesh
       bounds
     end
 
-    # TODO: Return a Bounds class that include methods for the computations
-    # done with these points. This would be a class that is different from
-    # Geom::BoundingBox because it should represent the orientation in model
-    # space.
+    private
+
     def get_bounding_box
       points = []
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT

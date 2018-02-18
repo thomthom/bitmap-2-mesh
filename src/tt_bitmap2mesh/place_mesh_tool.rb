@@ -57,8 +57,11 @@ module TT::Plugins::BitmapToMesh
       # data from that.
       if @image
         @ip_start = Sketchup::InputPoint.new(@image.origin)
-        point = @image.origin.offset(@image.normal.axes.x, @image.width)
-        point.offset!(@image.normal.axes.y, @image.height)
+        tr = Image.transformation(@image)
+        point = tr.origin.offset(tr.xaxis, @image.width)
+        point.offset!(tr.yaxis, @image.height)
+        # point = @image.origin.offset(@image.normal.axes.x, @image.width)
+        # point.offset!(@image.normal.axes.y, @image.height)
         @ip_rect = Sketchup::InputPoint.new(point)
         @state = State::PICK_HEIGHT
       end
@@ -226,11 +229,15 @@ module TT::Plugins::BitmapToMesh
       points = []
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         if @image
-          x_axis = @image.normal.axes.x
-          y_axis = @image.normal.axes.y
-          z_axis = @image.normal.axes.z
+          tr = Image.transformation(@image)
+          x_axis = tr.xaxis
+          y_axis = tr.yaxis
+          z_axis = tr.zaxis
           plane = [@image.origin, z_axis]
         else
+          # TODO: Review this. Doesn't look like it will infere the face
+          #       orientation correctly. And it should probably only allow
+          #       rectangular faces.
           face = @ip_start.face
           x_axis = (face) ? face.normal.axes.x : X_AXIS
           y_axis = (face) ? face.normal.axes.y : Y_AXIS
@@ -263,7 +270,7 @@ module TT::Plugins::BitmapToMesh
         # Create a line in the direction of the image's normal. We'll use the
         # image's origin as an arbitrary reference point. (Could easily have
         # been something like the centre.)
-        image_ray = [pt1, Z_AXIS]
+        image_ray = [pt1, z_axis]
         # From that we find the closest point to the image which will define the
         # height of the height mesh.
         pt5, pt_pick = Geom.closest_points(image_ray, pick_ray)

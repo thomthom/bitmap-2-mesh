@@ -10,6 +10,7 @@ require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/bitmap_render'
 require 'tt_bitmap2mesh/bounding_box'
 require 'tt_bitmap2mesh/heightmap'
+require 'tt_bitmap2mesh/text'
 
 
 module TT::Plugins::BitmapToMesh
@@ -187,6 +188,23 @@ module TT::Plugins::BitmapToMesh
         view.line_stipple = ''
         view.drawing_color = [255, 0, 0]
         box.draw(view)
+
+
+        pt1 = box.origin
+
+        x_offset = box.x_axis
+        pt2 = pt1.offset(x_offset, x_offset.length / 2.0)
+        text_x = Text.new("#{@bitmap.width}px (100%)")
+        text_x.align = TextAlignCenter
+        text_x.position = view.screen_coords(pt2)
+        text_x.draw(view)
+
+        y_offset = box.y_axis
+        pt3 = pt1.offset(y_offset, y_offset.length / 2.0)
+        text_y = Text.new("#{@bitmap.width}px (100%)")
+        text_y.align = TextAlignCenter
+        text_y.position = view.screen_coords(pt3)
+        text_y.draw(view)
       end
     end
 

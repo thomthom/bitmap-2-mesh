@@ -21,7 +21,22 @@ module TT::Plugins::BitmapToMesh
       @cache = nil
       @bounds = nil
       @height = 0
+      @max_sample_size = max_sample_size
       @samples = sample(@bitmap, max_sample_size)
+    end
+
+    def max_size
+      @max_sample_size
+    end
+
+    # @param [Length] value
+    def max_size=(value)
+      if value.to_i != @max_sample_size
+        @max_sample_size = value.to_i
+        @cache = nil
+        @bounds = nil
+        @samples = sample(@bitmap, @max_sample_size)
+      end
     end
 
     # @param [Geom::Transformation] value

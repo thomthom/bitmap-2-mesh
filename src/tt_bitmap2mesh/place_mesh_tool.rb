@@ -24,15 +24,22 @@ module TT::Plugins::BitmapToMesh
 
     def initialize(bitmap, image = nil)
       @bitmap = bitmap
+      @sample_size = [@bitmap.width, @bitmap.height].max
 
       # Renders low-res preview of the heightmap.
       @bitmap_render = BitmapRender.new(@bitmap)
 
       # Leader to read out the size of the heightmap
       num_triangles = (@bitmap.width - 1) * (@bitmap.height - 1) * 2
-      @leader_o = Leader.new("#{num_triangles} triangles")
-      @leader_x = Leader.new("#{@bitmap.width}px (100%)")
-      @leader_y = Leader.new("#{@bitmap.height}px (100%)")
+      @leaders = {
+        origin: Leader.new("#{num_triangles} triangles"),
+        x_axis: Leader.new("#{@bitmap.width}px (100%)"),
+        y_axis: Leader.new("#{@bitmap.height}px (100%)"),
+      }
+      @leaders.each { |id, leader|
+        leader.on_drag { |vector2d| on_scale_bitmap(vector2d) }
+        leader.on_drag_complete { |vector2d| on_scale_bitmap(vector2d) }
+      }
 
       # The Sketchup::Image entity to generate the mesh from.
       @image = image
@@ -133,14 +140,21 @@ module TT::Plugins::BitmapToMesh
     end
 
     def onMouseMove(flags, x, y, view)
+      return if @leaders.any? { |_, leader| leader.onMouseMove(flags, x, y, view) }
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
       update_dib_render_transformation
+    ensure
       view.invalidate
       update_ui
     end
 
+    def onLButtonDown(flags, x, y, view)
+      @leaders.any? { |_, leader| leader.onLButtonDown(flags, x, y, view) }
+    end
+
     def onLButtonUp(flags, x, y, view)
+      return if @leaders.any? { |_, leader| leader.onLButtonUp(flags, x, y, view) }
       case @state
       when State::PICK_ORIGIN
         @ip_start.copy!(@ip_mouse)
@@ -153,6 +167,7 @@ module TT::Plugins::BitmapToMesh
       when State::PICK_HEIGHT
         generate_mesh
       end
+    ensure
       view.invalidate
       update_ui
     end
@@ -166,7 +181,7 @@ module TT::Plugins::BitmapToMesh
         if x_axis.valid? && y_axis.valid?
           # TODO: Cache transformation.
           box_size = [x_axis.length, y_axis.length].max
-          scale = box_size.to_f / 64.0
+          scale = box_size.to_f / @bitmap_render.max_size
           if @state == State::PICK_HEIGHT
             z_axis = box.z_axis
             scale_z = z_axis.length
@@ -180,9 +195,9 @@ module TT::Plugins::BitmapToMesh
           tr_origin = Geom::Transformation.new(box.origin, x_axis, y_axis)
           @bitmap_render.transformation = tr_origin * tr_scale
           # Update leader positions.
-          @leader_o.position = box.origin
-          @leader_x.position = box.origin.offset(x_axis, x_axis.length / 2.0)
-          @leader_y.position = box.origin.offset(y_axis, y_axis.length / 2.0)
+          @leaders[:origin].position = box.origin
+          @leaders[:x_axis].position = box.origin.offset(x_axis, x_axis.length / 2.0)
+          @leaders[:y_axis].position = box.origin.offset(y_axis, y_axis.length / 2.0)
         end
       end
     end
@@ -203,9 +218,7 @@ module TT::Plugins::BitmapToMesh
         box.draw(view)
 
         # Leaders
-        @leader_o.draw(view)
-        @leader_x.draw(view)
-        @leader_y.draw(view)
+        @leaders.each { |_, leader| leader.draw(view) }
       end
     end
 
@@ -307,6 +320,36 @@ module TT::Plugins::BitmapToMesh
     def get_or_create_material(model, image, bitmap)
       return nil unless Geom::PolygonMesh.instance_methods.include?(:set_uv)
       material = image ? Image.clone_material(image) : bitmap.create_material(model)
+    end
+
+    def on_scale_bitmap(vector)
+      # Convert the mouse movement vector to an offset value:
+      y = -vector.y
+      size_offset = (y * 0.25).to_i
+      max_size = @sample_size + size_offset
+      # p [vector, y, size_offset]
+
+      # Work out the new bitmap size:
+      bitmap_max = [@bitmap.width, @bitmap.height].max
+      @sample_size = clamp(2, max_size, bitmap_max)
+      @bitmap_render.max_size = clamp(2, max_size, [bitmap_max, 64].min)
+
+      # Refresh the leader information:
+      scale = @sample_size.to_f / bitmap_max.to_f
+      w = (@bitmap.width * scale).to_i
+      h = (@bitmap.height * scale).to_i
+      num_triangles = (w - 1) * (h - 1) * 2
+      percent = (scale * 100).to_i
+      @leaders[:origin].text = "#{num_triangles} triangles"
+      @leaders[:x_axis].text = "#{w}px (#{percent}%)"
+      @leaders[:y_axis].text = "#{h}px (#{percent}%)"
+
+      update_dib_render_transformation
+      Sketchup.active_model.active_view.invalidate
+    end
+
+    def clamp(min, val, max)
+      [min, val, max].sort[1]
     end
 
   end # class PlaceMeshTool

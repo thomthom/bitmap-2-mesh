@@ -10,7 +10,7 @@ require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/bitmap_render'
 require 'tt_bitmap2mesh/bounding_box'
 require 'tt_bitmap2mesh/heightmap'
-require 'tt_bitmap2mesh/text'
+require 'tt_bitmap2mesh/leader'
 
 
 module TT::Plugins::BitmapToMesh
@@ -27,6 +27,12 @@ module TT::Plugins::BitmapToMesh
 
       # Renders low-res preview of the heightmap.
       @bitmap_render = BitmapRender.new(@bitmap)
+
+      # Leader to read out the size of the heightmap
+      num_triangles = (@bitmap.width - 1) * (@bitmap.height - 1) * 2
+      @leader_o = Leader.new("#{num_triangles} triangles")
+      @leader_x = Leader.new("#{@bitmap.width}px (100%)")
+      @leader_y = Leader.new("#{@bitmap.height}px (100%)")
 
       # The Sketchup::Image entity to generate the mesh from.
       @image = image
@@ -151,6 +157,7 @@ module TT::Plugins::BitmapToMesh
       update_ui
     end
 
+    # TODO: Rename this method to something more appropriate.
     def update_dib_render_transformation
       box = get_bounding_box
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
@@ -172,6 +179,10 @@ module TT::Plugins::BitmapToMesh
           tr_scale = Geom::Transformation.scaling(scale, scale, scale_z)
           tr_origin = Geom::Transformation.new(box.origin, x_axis, y_axis)
           @bitmap_render.transformation = tr_origin * tr_scale
+          # Update leader positions.
+          @leader_o.position = box.origin
+          @leader_x.position = box.origin.offset(x_axis, x_axis.length / 2.0)
+          @leader_y.position = box.origin.offset(y_axis, y_axis.length / 2.0)
         end
       end
     end
@@ -182,29 +193,19 @@ module TT::Plugins::BitmapToMesh
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         box = get_bounding_box
 
+        # Bitmap Preview
         @bitmap_render.draw(view) if box.have_area?
 
+        # Boundingbox
         view.line_width = 2
         view.line_stipple = ''
         view.drawing_color = [255, 0, 0]
         box.draw(view)
 
-
-        pt1 = box.origin
-
-        x_offset = box.x_axis
-        pt2 = pt1.offset(x_offset, x_offset.length / 2.0)
-        text_x = Text.new("#{@bitmap.width}px (100%)")
-        text_x.align = TextAlignCenter
-        text_x.position = view.screen_coords(pt2)
-        text_x.draw(view)
-
-        y_offset = box.y_axis
-        pt3 = pt1.offset(y_offset, y_offset.length / 2.0)
-        text_y = Text.new("#{@bitmap.width}px (100%)")
-        text_y.align = TextAlignCenter
-        text_y.position = view.screen_coords(pt3)
-        text_y.draw(view)
+        # Leaders
+        @leader_o.draw(view)
+        @leader_x.draw(view)
+        @leader_y.draw(view)
       end
     end
 

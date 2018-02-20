@@ -5,11 +5,14 @@
 #
 #-------------------------------------------------------------------------------
 
+require 'tt_bitmap2mesh/cursor'
 require 'tt_bitmap2mesh/text'
 
 
 module TT::Plugins::BitmapToMesh
   module Draggable
+
+    CURSOR = Cursor.get_id(:scale_n_s)
 
     def initialize(*args)
       super
@@ -61,6 +64,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def onMouseMove(flags, x, y, view)
+      @mouse_over = mouse_over?(x, y, view)
       if @mouse_down_position
         mouse_position = Geom::Point3d.new(x, y, 0)
         direction = @mouse_down_position.vector_to(mouse_position)
@@ -72,6 +76,15 @@ module TT::Plugins::BitmapToMesh
         false
       end
       # mouse_over?(x, y, view)
+    end
+
+    def onSetCursor
+      if @mouse_over
+        UI.set_cursor(CURSOR)
+        true
+      else
+        false
+      end
     end
 
     private

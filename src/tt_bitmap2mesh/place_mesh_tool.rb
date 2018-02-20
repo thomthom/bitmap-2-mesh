@@ -176,6 +176,10 @@ module TT::Plugins::BitmapToMesh
       update_ui
     end
 
+    def onSetCursor
+      @leaders.any? { |_, leader| leader.onSetCursor }
+    end
+
     # TODO: Rename this method to something more appropriate.
     def update_dib_render_transformation
       box = get_bounding_box

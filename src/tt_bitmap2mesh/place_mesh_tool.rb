@@ -38,7 +38,11 @@ module TT::Plugins::BitmapToMesh
       }
       @leaders.each { |id, leader|
         leader.on_drag { |vector2d| on_scale_bitmap(vector2d) }
-        leader.on_drag_complete { |vector2d| on_scale_bitmap(vector2d) }
+        leader.on_drag_complete { |vector2d|
+          on_scale_bitmap(vector2d)
+          @sample_size =  @sample_size_mouse
+          @sample_size_mouse = nil
+        }
       }
 
       # The Sketchup::Image entity to generate the mesh from.
@@ -325,17 +329,19 @@ module TT::Plugins::BitmapToMesh
     def on_scale_bitmap(vector)
       # Convert the mouse movement vector to an offset value:
       y = -vector.y
-      size_offset = (y * 0.25).to_i
+      # size_offset = (y * 0.25).to_i
+      size_offset = y.to_i
       max_size = @sample_size + size_offset
       # p [vector, y, size_offset]
 
       # Work out the new bitmap size:
       bitmap_max = [@bitmap.width, @bitmap.height].max
-      @sample_size = clamp(2, max_size, bitmap_max)
+      @sample_size_mouse = clamp(2, max_size, bitmap_max)
       @bitmap_render.max_size = clamp(2, max_size, [bitmap_max, 64].min)
 
       # Refresh the leader information:
-      scale = @sample_size.to_f / bitmap_max.to_f
+      sample_size = @sample_size_mouse || @sample_size
+      scale = sample_size.to_f / bitmap_max.to_f
       w = (@bitmap.width * scale).to_i
       h = (@bitmap.height * scale).to_i
       num_triangles = (w - 1) * (h - 1) * 2

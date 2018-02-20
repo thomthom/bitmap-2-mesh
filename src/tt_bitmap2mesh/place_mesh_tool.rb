@@ -6,6 +6,7 @@
 #-------------------------------------------------------------------------------
 
 require 'tt_bitmap2mesh/helpers/image'
+require 'tt_bitmap2mesh/helpers/image_rep'
 require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/bitmap_render'
 require 'tt_bitmap2mesh/bounding_box'
@@ -304,10 +305,12 @@ module TT::Plugins::BitmapToMesh
       y_axis = box.y_axis
       z_axis = box.z_axis
 
+      sampled_bitmap = sampled_bitmap(@bitmap, @sample_size)
+
       # Compute the X and Y scale based on the bitmap's width and height minus
       # one because; a 100x100 pixel image produce 99x99 faces.
-      x_scale = x_axis.length / (@bitmap.width - 1)
-      y_scale = y_axis.length / (@bitmap.height - 1)
+      x_scale = x_axis.length / (sampled_bitmap.width - 1)
+      y_scale = y_axis.length / (sampled_bitmap.height - 1)
       height  = z_axis.length
       tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
       tr_axes = Geom::Transformation.axes(box.origin, x_axis, y_axis, z_axis)
@@ -317,12 +320,36 @@ module TT::Plugins::BitmapToMesh
       model.start_operation('Mesh From Heightmap', true)
       heightmap = HeightmapMesh.new
       material = get_or_create_material(model, @image, @bitmap)
-      group = heightmap.generate(model.active_entities, @bitmap, height,
+      group = heightmap.generate(model.active_entities, sampled_bitmap, height,
                                  material, transformation)
       model.commit_operation
       # Once the mesh is generated the tool is popped from the stack and
       # returned to the previous tool.
       model.tools.pop_tool
+    end
+
+    def sampled_bitmap(bitmap, max_sample_size)
+      # TODO: Enable this feature only for SU versions supporting ImageRep.
+      # TODO: Move to Bitmap class.
+      max_image_size = [bitmap.width, bitmap.height].max
+      return bitmap if max_sample_size >= max_image_size
+      # Compute the new dimensions:
+      scale_ratio = max_sample_size.to_f / max_image_size.to_f
+      width = (bitmap.width * scale_ratio).round
+      height = (bitmap.height * scale_ratio).round
+      # Downsample:
+      colors = []
+      Sampler.new.sample2(bitmap, max_sample_size) { |color, scaled_x, scaled_y|
+        colors << color
+      }
+      # Correct order for ImageRep:
+      rows = colors.each_slice(width).to_a
+      rows.reverse!
+      rows.flatten!
+      colors = rows
+      # Generate new ImageRep:
+      image_rep = ImageRepHelper.colors_to_image_rep(width, height, colors)
+      Bitmap.new(image_rep)
     end
 
     def get_or_create_material(model, image, bitmap)

@@ -24,6 +24,11 @@ module TT::Plugins::BitmapToMesh
       PICK_HEIGHT = 2
     end
 
+    module VCB
+      VCB::INPUT_BOUNDS = 0
+      VCB::INPUT_SAMPLES =1
+    end
+
     def initialize(bitmap, image = nil)
       @bitmap = bitmap
       @sample_size = [@bitmap.width, @bitmap.height].max
@@ -44,6 +49,7 @@ module TT::Plugins::BitmapToMesh
           on_scale_bitmap(vector2d)
           @sample_size =  @sample_size_mouse
           @sample_size_mouse = nil
+          @vcb_input = VCB::INPUT_SAMPLES
         }
       }
 
@@ -56,6 +62,8 @@ module TT::Plugins::BitmapToMesh
 
       # Keeps track of the tool's state.
       @state = nil
+
+      @vcb_input = VCB::INPUT_BOUNDS
     end
 
     def enableVCB?
@@ -72,6 +80,7 @@ module TT::Plugins::BitmapToMesh
       @ip_mouse.clear
 
       @state = State::PICK_ORIGIN
+      @vcb_input = VCB::INPUT_BOUNDS
 
       # If an image is already provided then extract position and other state
       # data from that.
@@ -92,17 +101,35 @@ module TT::Plugins::BitmapToMesh
       case @state
       when State::PICK_ORIGIN
         Sketchup.status_text = 'Pick origin. Picking a point on a face will orient the mesh to the face.'
+      when State::PICK_IMAGE_SIZE
+        Sketchup.status_text = 'Pick width.'
+      when State::PICK_HEIGHT
+        Sketchup.status_text = 'Pick depth.'
+      end
+      if @sample_size_mouse || @vcb_input == VCB::INPUT_SAMPLES
+        update_vcb_samples
+      else
+        update_vcb_bounds
+      end
+    end
+
+    def update_vcb_bounds
+      case @state
+      when State::PICK_ORIGIN
         Sketchup.vcb_label = ''
         Sketchup.vcb_value = ''
       when State::PICK_IMAGE_SIZE
-        Sketchup.status_text = 'Pick width.'
         Sketchup.vcb_label = 'Width:'
         Sketchup.vcb_value = get_bounding_box.width
       when State::PICK_HEIGHT
-        Sketchup.status_text = 'Pick depth.'
         Sketchup.vcb_label = 'Depth:'
         Sketchup.vcb_value = get_bounding_box.depth
       end
+    end
+
+    def update_vcb_samples
+      Sketchup.vcb_label = 'Max size:'
+      Sketchup.vcb_value = @sample_size_mouse || @sample_size
     end
 
     def deactivate(view)
@@ -114,31 +141,21 @@ module TT::Plugins::BitmapToMesh
     end
 
     def onCancel(reason, view)
-      reset
+      if @vcb_input = VCB::INPUT_SAMPLES
+        @vcb_input = VCB::INPUT_BOUNDS
+        update_ui
+      else
+        reset
+      end
       view.invalidate
     end
 
     def onUserText(text, view)
-      length = text.to_l
-      return if length == 0
-      case @state
-      when State::PICK_IMAGE_SIZE
-        x_axis = get_bounding_box.x_axis
-        if x_axis.valid?
-          point = @ip_start.position.offset(x_axis, length)
-          @ip_rect = Sketchup::InputPoint.new(point)
-          @state = State::PICK_HEIGHT
-        end
-      when State::PICK_HEIGHT
-        z_axis = get_bounding_box.z_axis
-        unless z_axis.valid?
-          x_axis = points[0].vector_to(points[1])
-          y_axis = points[0].vector_to(points[3])
-          z_axis = x_axis * y_axis
-        end
-        point = @ip_start.position.offset(z_axis, length)
-        @ip_mouse = Sketchup::InputPoint.new(point)
-        generate_mesh
+      case @vcb_input
+      when VCB::INPUT_BOUNDS
+        vcb_adjust_bounds(text, view)
+      when VCB::INPUT_SAMPLES
+        vcb_adjust_samples(text, view)
       end
     ensure
       update_ui
@@ -239,6 +256,36 @@ module TT::Plugins::BitmapToMesh
     end
 
     private
+
+    def vcb_adjust_bounds(text, view)
+      length = text.to_l
+      return if length == 0
+      case @state
+      when State::PICK_IMAGE_SIZE
+        x_axis = get_bounding_box.x_axis
+        if x_axis.valid?
+          point = @ip_start.position.offset(x_axis, length)
+          @ip_rect = Sketchup::InputPoint.new(point)
+          @state = State::PICK_HEIGHT
+        end
+      when State::PICK_HEIGHT
+        z_axis = get_bounding_box.z_axis
+        unless z_axis.valid?
+          x_axis = points[0].vector_to(points[1])
+          y_axis = points[0].vector_to(points[3])
+          z_axis = x_axis * y_axis
+        end
+        point = @ip_start.position.offset(z_axis, length)
+        @ip_mouse = Sketchup::InputPoint.new(point)
+        generate_mesh
+      end
+    end
+
+    def vcb_adjust_samples(text, view)
+      max_size = text.to_i
+      adjust_sample_size(max_size)
+      @sample_size = @sample_size_mouse
+    end
 
     def get_bounding_box
       points = []
@@ -364,8 +411,11 @@ module TT::Plugins::BitmapToMesh
       # size_offset = (y * 0.25).to_i
       size_offset = y.to_i
       max_size = @sample_size + size_offset
-      # p [vector, y, size_offset]
+      adjust_sample_size(max_size)
+      update_ui
+    end
 
+    def adjust_sample_size(max_size)
       # Work out the new bitmap size:
       bitmap_max = [@bitmap.width, @bitmap.height].max
       @sample_size_mouse = clamp(2, max_size, bitmap_max)

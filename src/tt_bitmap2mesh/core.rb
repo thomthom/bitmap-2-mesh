@@ -73,6 +73,8 @@ module TT::Plugins::BitmapToMesh
     tool = PlaceMeshTool.new(bitmap)
     Sketchup.active_model.tools.push_tool(tool)
     tool
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 
@@ -81,6 +83,8 @@ module TT::Plugins::BitmapToMesh
     tool = PlaceMeshTool.new(bitmap, image)
     Sketchup.active_model.tools.push_tool(tool)
     tool
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 
@@ -111,6 +115,8 @@ module TT::Plugins::BitmapToMesh
       }
     }
     model.commit_operation
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 

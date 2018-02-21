@@ -43,15 +43,17 @@ module TT::Plugins::BitmapToMesh
         x_axis: Leader.new("#{@bitmap.width}px (100%)"),
         y_axis: Leader.new("#{@bitmap.height}px (100%)"),
       }
-      @leaders.each { |id, leader|
-        leader.on_drag { |vector2d| on_scale_bitmap(vector2d) }
-        leader.on_drag_complete { |vector2d|
-          on_scale_bitmap(vector2d)
-          @sample_size =  @sample_size_mouse
-          @sample_size_mouse = nil
-          @vcb_input = VCB::INPUT_SAMPLES
+      if defined?(Sketchup::ImageRep)
+        @leaders.each { |id, leader|
+          leader.on_drag { |vector2d| on_scale_bitmap(vector2d) }
+          leader.on_drag_complete { |vector2d|
+            on_scale_bitmap(vector2d)
+            @sample_size =  @sample_size_mouse
+            @sample_size_mouse = nil
+            @vcb_input = VCB::INPUT_SAMPLES
+          }
         }
-      }
+      end
 
       # The Sketchup::Image entity to generate the mesh from.
       @image = image
@@ -196,7 +198,9 @@ module TT::Plugins::BitmapToMesh
     end
 
     def onSetCursor
-      @leaders.any? { |_, leader| leader.onSetCursor }
+      if defined?(Sketchup::ImageRep)
+        @leaders.any? { |_, leader| leader.onSetCursor }
+      end
     end
 
     # TODO: Rename this method to something more appropriate.
@@ -379,6 +383,7 @@ module TT::Plugins::BitmapToMesh
     def sampled_bitmap(bitmap, max_sample_size)
       # TODO: Enable this feature only for SU versions supporting ImageRep.
       # TODO: Move to Bitmap class.
+      # TODO: Allow support for Image::BMP for support for SketchUp 2017 and older.
       max_image_size = [bitmap.width, bitmap.height].max
       return bitmap if max_sample_size >= max_image_size
       # Compute the new dimensions:

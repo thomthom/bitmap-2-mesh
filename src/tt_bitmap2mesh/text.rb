@@ -33,15 +33,17 @@ module TT::Plugins::BitmapToMesh
     private
 
     def draw_outlined_text(view, position, color, outline_color)
-      [
-        Geom::Vector3d.new(-1, -1, 0),
-        Geom::Vector3d.new(-1,  1, 0),
-        Geom::Vector3d.new( 1, -1, 0),
-        Geom::Vector3d.new( 1,  1, 0),
-      ].each { |offset|
-        pt = position.offset(offset)
-        draw_text(view, pt, outline_color)
-      }
+      unless LEGACY_TEXT
+        [
+          Geom::Vector3d.new(-1, -1, 0),
+          Geom::Vector3d.new(-1,  1, 0),
+          Geom::Vector3d.new( 1, -1, 0),
+          Geom::Vector3d.new( 1,  1, 0),
+        ].each { |offset|
+          pt = position.offset(offset)
+          draw_text(view, pt, outline_color)
+        }
+      end
       draw_text(view, position, color)
     end
 
@@ -65,7 +67,7 @@ module TT::Plugins::BitmapToMesh
       view.draw_text(position, @text, options)
     end
 
-    def draw_text_legacy(view)
+    def draw_text_legacy(view, position)
       view.draw_text(position, @text)
     end
 

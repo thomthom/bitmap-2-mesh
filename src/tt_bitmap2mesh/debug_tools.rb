@@ -30,14 +30,15 @@ module TT::Plugins::BitmapToMesh
     bitmap = Bitmap.from_image(image)
     material = Image.clone_material(image)
 
-    transformation = image.transformation
     height = 2.m
+    tr_scale = Geom::Transformation.scaling(ORIGIN, 1, 1, height)
+    transformation = image.transformation * tr_scale
 
     heightmap = HeightmapMesh.new
 
     SpeedUp.profile {
       model.start_operation('Mesh From Heightmap', true)
-      group = heightmap.generate(model.active_entities, bitmap, height, material, transformation)
+      group = heightmap.generate(model.active_entities, bitmap, material, transformation)
       model.commit_operation
     }
 

@@ -6,6 +6,7 @@
 #-------------------------------------------------------------------------------
 
 require 'tt_bitmap2mesh/bitmap'
+require 'tt_bitmap2mesh/sampler'
 
 
 module TT::Plugins::BitmapToMesh
@@ -21,7 +22,22 @@ module TT::Plugins::BitmapToMesh
       @cache = nil
       @bounds = nil
       @height = 0
+      @max_sample_size = max_sample_size
       @samples = sample(@bitmap, max_sample_size)
+    end
+
+    def max_size
+      @max_sample_size
+    end
+
+    # @param [Length] value
+    def max_size=(value)
+      if value.to_i != @max_sample_size
+        @max_sample_size = value.to_i
+        @cache = nil
+        @bounds = nil
+        @samples = sample(@bitmap, @max_sample_size)
+      end
     end
 
     # @param [Geom::Transformation] value
@@ -88,21 +104,11 @@ module TT::Plugins::BitmapToMesh
     # @return [Hash{Color => Array<Geom::Point3d>}]
     def sample(bitmap, max_sample_size)
       data = {}
-      max_image_size = [bitmap.width, bitmap.height].max
-      scale_down = max_sample_size.to_f / max_image_size.to_f
-      scaled_width = (bitmap.width * scale_down).round
-      scaled_height = (bitmap.height * scale_down).round
-      scale_up = 1.0 / scale_down
-      scaled_width.times { |scaled_x|
-        scaled_height.times { |scaled_y|
-          x = (scaled_x * scale_up).round
-          y = (scaled_y * scale_up).round
-          color = bitmap[x, y]
-          scaled_z = color_to_height(color)
-          quad = quad_points(scaled_x, scaled_y, scaled_z)
-          data[color] ||= []
-          data[color] << quad
-        }
+      Sampler.new.sample(bitmap, max_sample_size) { |color, scaled_x, scaled_y|
+        scaled_z = color_to_height(color)
+        quad = quad_points(scaled_x, scaled_y, scaled_z)
+        data[color] ||= []
+        data[color] << quad
       }
       data
     end

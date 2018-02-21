@@ -25,10 +25,8 @@ module TT::Plugins::BitmapToMesh
     SMOOTH_AND_SOFTEN = AUTO_SOFTEN | SMOOTH_SOFT_EDGES
 
 
-    def generate(entities, bitmap, height, material = nil, transformation = IDENTITY)
+    def generate(entities, bitmap, material = nil, transformation = IDENTITY)
       model = entities.model
-
-      step_z = height / 255
 
       bitmap_width = bitmap.width # Cache - avoid repeated method call.
       bitmap_height = bitmap.height # Cache - avoid repeated method call.
@@ -53,7 +51,7 @@ module TT::Plugins::BitmapToMesh
           index = (bitmap_width * y) + x
           color = bitmap.data[index]
           # Generate a Point3d from pixel colour.
-          z = step_z * color.luminance
+          z = color.luminance / 255.0
           points << Geom::Point3d.new(x, y, z)
         }
       }

@@ -6,6 +6,7 @@
 #-------------------------------------------------------------------------------
 
 require 'tt_bitmap2mesh/bitmap'
+require 'tt_bitmap2mesh/sampler'
 
 
 module TT::Plugins::BitmapToMesh

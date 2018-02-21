@@ -12,6 +12,7 @@ require 'tt_bitmap2mesh/bitmap_render'
 require 'tt_bitmap2mesh/bounding_box'
 require 'tt_bitmap2mesh/heightmap'
 require 'tt_bitmap2mesh/leader'
+require 'tt_bitmap2mesh/sampler'
 
 
 module TT::Plugins::BitmapToMesh

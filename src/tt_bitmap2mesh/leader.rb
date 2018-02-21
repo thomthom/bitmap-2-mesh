@@ -21,7 +21,7 @@ module TT::Plugins::BitmapToMesh
       @text = Text.new(text)
       @text.align = TextAlignCenter
       @position = ORIGIN.clone
-      @debug = true
+      @debug = false
     end
 
     def text
@@ -41,12 +41,12 @@ module TT::Plugins::BitmapToMesh
     end
 
     def draw(view)
-      @text.position = view.screen_coords(@position)
-      @text.draw(view)
       if @debug
         view.drawing_color = Sketchup::Color.new(255, 0, 0, 64)
         view.draw2d(GL_QUADS, bounds(view))
       end
+      @text.position = view.screen_coords(@position)
+      @text.draw(view)
     end
 
     private

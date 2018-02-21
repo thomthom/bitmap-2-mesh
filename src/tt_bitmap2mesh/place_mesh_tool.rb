@@ -359,8 +359,8 @@ module TT::Plugins::BitmapToMesh
       # one because; a 100x100 pixel image produce 99x99 faces.
       x_scale = x_axis.length / (sampled_bitmap.width - 1)
       y_scale = y_axis.length / (sampled_bitmap.height - 1)
-      height  = z_axis.length
-      tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, 1)
+      z_scale  = z_axis.length
+      tr_scaling = Geom::Transformation.scaling(ORIGIN, x_scale, y_scale, z_scale)
       tr_axes = Geom::Transformation.axes(box.origin, x_axis, y_axis, z_axis)
       transformation = tr_axes * tr_scaling
 
@@ -368,7 +368,7 @@ module TT::Plugins::BitmapToMesh
       model.start_operation('Mesh From Heightmap', true)
       heightmap = HeightmapMesh.new
       material = get_or_create_material(model, @image, @bitmap)
-      group = heightmap.generate(model.active_entities, sampled_bitmap, height,
+      group = heightmap.generate(model.active_entities, sampled_bitmap,
                                  material, transformation)
       model.commit_operation
       # Once the mesh is generated the tool is popped from the stack and

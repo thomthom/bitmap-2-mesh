@@ -60,6 +60,7 @@ module TT::Plugins::BitmapToMesh
 
 
   def self.bitmap_to_mesh_tool
+    raise 'Testing error reporter'
     if defined?(Sketchup::ImageRep)
       filetypes = %w[bmp jpg jpeg png psd tif tga]
       filter = filetypes.map { |filetype| "*.#{filetype}" }.join(';')

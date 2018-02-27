@@ -29,6 +29,17 @@ module TT::Plugins::BitmapToMesh
     end
 
 
+    # TT::Plugins::BitmapToMesh::Settings.test_mode = true
+    @test_mode = self.read("TestMode", false)
+    def self.test_mode?
+      @test_mode
+    end
+    def self.test_mode=(boolean)
+      @test_mode = boolean ? true : false
+      self.write("TestMode", @test_mode)
+    end
+
+
     # TT::Plugins::BitmapToMesh::Settings.local_error_server = true
     @local_error_server = self.read("LocalErrorServer", false)
     def self.local_error_server?

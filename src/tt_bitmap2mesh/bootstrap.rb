@@ -47,8 +47,9 @@ module TT::Plugins::BitmapToMesh
       :extension_id => PLUGIN_ID,
       :extension    => @extension,
       :server       => "http://#{server}/api/v1/extension/report_error",
-      :support_url  => "http://www.thomthom.net/software/example/support",
-      :debug        => Settings.debug_mode?
+      :support_url  => "https://extensions.sketchup.com/content/bitmap-mesh",
+      :debug        => Settings.debug_mode?,
+      :test         => Settings.test_mode?
     }
     ERROR_REPORTER = ErrorReporter.new(config)
 

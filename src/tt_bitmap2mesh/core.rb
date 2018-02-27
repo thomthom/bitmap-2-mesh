@@ -5,35 +5,11 @@
 #
 #-------------------------------------------------------------------------------
 
-
-# Attempt to load TT_Lib or provide install instructions.
-begin
-  require 'TT_Lib2/core.rb'
-rescue LoadError => e
-  module TT
-    if @lib2_update.nil?
-      url = 'http://www.thomthom.net/software/sketchup/tt_lib2/errors/not-installed'
-      options = {
-        :dialog_title => 'TT_Lib² Not Installed',
-        :scrollable => false, :resizable => false, :left => 200, :top => 200
-      }
-      w = UI::WebDialog.new(options)
-      w.set_size(500, 300)
-      w.set_url("#{url}?plugin=#{File.basename( __FILE__ )}")
-      w.show
-      @lib2_update = w
-    end
-  end
-end
-
-
 require 'tt_bitmap2mesh/helpers/image'
 require 'tt_bitmap2mesh/debug'
 require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/place_mesh_tool'
 
-
-if defined?(TT::Lib) && TT::Lib.compatible?('2.7.0', 'Bitmap to Mesh')
 
 module TT::Plugins::BitmapToMesh
 
@@ -95,11 +71,9 @@ module TT::Plugins::BitmapToMesh
     model.start_operation('Mesh From Bitmap', true)
     group = model.active_entities.add_group
     group.description = 'Mesh from Bitmap'
-    progress = TT::Progressbar.new(bitmap.pixels, 'Mesh from Bitmap')
     group.transform!(Image.transformation(image))
     bitmap.height.times { |y|
       bitmap.width.times { |x|
-        progress.next
         index = (bitmap.width * y) + x
         color = bitmap.data[index]
         points = [
@@ -122,5 +96,3 @@ module TT::Plugins::BitmapToMesh
 
 
 end # module
-
-end # if TT_Lib

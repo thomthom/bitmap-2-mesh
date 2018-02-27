@@ -29,7 +29,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def self.temp_image_file(image, &block)
-      temp_path = File.expand_path(TT::System.temp_path)
+      temp_path = File.expand_path(Sketchup.temp_dir)
       temp_file = File.join(temp_path, 'TT_BMP2Mesh.bmp')
       tw = Sketchup.create_texture_writer
       tw.load(image)
@@ -96,7 +96,7 @@ module TT::Plugins::BitmapToMesh
     end
 
     def temp_file(&block)
-      temp_path = File.expand_path(TT::System.temp_path)
+      temp_path = File.expand_path(Sketchup.temp_dir)
       temp_filename = File.join(temp_path, 'TT_BMP2Mesh.bmp')
       @instance.save(temp_filename)
       begin

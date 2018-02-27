@@ -44,10 +44,8 @@ module TT::Plugins::BitmapToMesh
 
       # Read colour values and generate 3D points.
       points = []
-      # progress = TT::Progressbar.new(bitmap.pixels, 'Reading Image')
       bitmap_height.times { |y|
         bitmap_width.times { |x|
-          # progress.next
           index = (bitmap_width * y) + x
           color = bitmap.data[index]
           # Generate a Point3d from pixel colour.
@@ -66,12 +64,10 @@ module TT::Plugins::BitmapToMesh
       u_step = 1.0 / bitmap.width.to_f
       v_step = 1.0 / bitmap.height.to_f
       # (!) Progressbar and Sketchup.status_bar impact performance.
-      # progress = TT::Progressbar.new(points, 'Indexing Points')
       mesh = Geom::PolygonMesh.new(num_points, num_polygons)
       uv_map = material && mesh.respond_to?(:set_uv)
       mesh_indicies = []
       points.each_with_index { |point, i|
-        # progress.next
         # Sketchup.status_text = sprintf("Indexing points: %.1f%%", (i / total) * 100.0)
         mesh_indicies << mesh.add_point(point)
 
@@ -86,12 +82,10 @@ module TT::Plugins::BitmapToMesh
 
       t = Time.now
       # Generate the mesh
-      # progress = TT::Progressbar.new(bitmap.pixels, 'Generating Mesh')
       columns = bitmap.width - 1
       rows = bitmap.height - 1
       rows.times { |y|
         columns.times { |x|
-          # progress.next
           r = y * bitmap_width # Current row
           # Sketchup.status_text = sprintf("Generating mesh: %.1f%%", ((x+r) / total) * 100.0)
           # Collect the indicies from the pixel we're interested in.

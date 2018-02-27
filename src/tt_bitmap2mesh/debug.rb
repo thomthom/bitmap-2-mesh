@@ -12,14 +12,11 @@ module TT::Plugins::BitmapToMesh
   # @example
   #   TT::Plugins::BitmapToMesh.reload
   #
-  # @param [Boolean] tt_lib Reloads TT_Lib2 if +true+.
-  #
   # @return [Integer] Number of files reloaded.
   # @since 1.0.0
-  def self.reload(tt_lib = false)
+  def self.reload
     original_verbose = $VERBOSE
     $VERBOSE = nil
-    TT::Lib.reload if tt_lib
     # Core file (this)
     load __FILE__
     # Supporting files

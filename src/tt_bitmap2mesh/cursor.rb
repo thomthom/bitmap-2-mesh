@@ -11,7 +11,6 @@ module TT::Plugins::BitmapToMesh
   module Cursor
 
     # Definitions of cursor resources.
-    # :symbol_id => ['filename.png', x, y]
     @cursors = {
       :default            => 0,
       :invalid            => 663,
@@ -89,14 +88,7 @@ module TT::Plugins::BitmapToMesh
     # @param [Symbol] id
     # @return [Integer, nil]
     def self.get_id(id)
-      return nil unless @cursors.key?(id)
-      # Load cursors on demand
-      if @cursors[id].is_a?(Array)
-        cursor_file, x, y = @cursors[id]
-        filename = File.join( TT::Cursor::PATH, cursor_file )
-        @cursors[id] = UI.create_cursor( filename, x, y )
-      end
-      return @cursors[id]
+      @cursors[id]
     end
 
     # @param [Geom::Vector3d] screen_vector

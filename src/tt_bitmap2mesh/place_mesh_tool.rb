@@ -222,6 +222,7 @@ module TT::Plugins::BitmapToMesh
     # TODO: Rename this method to something more appropriate.
     def update_dib_render_transformation
       box = get_bounding_box
+      return if box.empty?
       if @state == State::PICK_IMAGE_SIZE || @state == State::PICK_HEIGHT
         x_axis = box.x_axis
         y_axis = box.y_axis
@@ -274,7 +275,9 @@ module TT::Plugins::BitmapToMesh
         box.draw(view)
 
         # Leaders
-        @leaders.each { |_, leader| leader.draw(view) }
+        if @state == State::PICK_HEIGHT
+          @leaders.each { |_, leader| leader.draw(view) }
+        end
       end
     rescue Exception => error
       ERROR_REPORTER.handle(error)

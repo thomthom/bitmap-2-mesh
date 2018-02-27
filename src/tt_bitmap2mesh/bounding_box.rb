@@ -23,10 +23,15 @@ module TT::Plugins::BitmapToMesh
     attr_reader :points
 
     def initialize(points)
-      unless [4, 8].include?(points.size)
+      unless [0, 4, 8].include?(points.size)
         raise ArgumentError, "Expected 4 or 8 points (#{points.size} given)"
       end
       @points = points
+    end
+
+
+    def empty?
+      @points.empty?
     end
 
 

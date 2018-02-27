@@ -72,8 +72,8 @@ module TT::Plugins::BitmapToMesh
         mesh_indicies << mesh.add_point(point)
 
         next unless uv_map
-        y = i / h
-        x = i - (h * y)
+        y = i / w
+        x = i - (w * y)
         u = x * u_step
         v = y * v_step
         mesh.set_uv(i + 1, [u, v, 0], true)

@@ -33,15 +33,20 @@ careful with the bitmap sizes.
 * Context Menu » Mesh From Bitmap
 
 
-## Requirements
+## Compatibility
 
-### Recommended
+### SketchUp 2018 or newer
 
-* SketchUp 2018 or newer
+* All features
 
-### Limited Compatibility
+### SketchUp 2014 to SketchUp 2017
 
-* SketchUp 2014 to SketchUp 2017
+* No down-sampling of heightmaps.
+* Limited image formats supported.
+
+### SketchUp 2014 to SketchUp 2016
+
+* Degraded text display.
 
 
 ## Related Links

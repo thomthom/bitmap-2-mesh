@@ -74,6 +74,8 @@ module TT::Plugins::BitmapToMesh
 
     def activate
       reset
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     def reset
@@ -97,6 +99,8 @@ module TT::Plugins::BitmapToMesh
 
       update_dib_render_transformation
       update_ui
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     def update_ui
@@ -150,6 +154,8 @@ module TT::Plugins::BitmapToMesh
         reset
       end
       view.invalidate
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     def onUserText(text, view)
@@ -159,6 +165,8 @@ module TT::Plugins::BitmapToMesh
       when VCB::INPUT_SAMPLES
         vcb_adjust_samples(text, view)
       end
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     ensure
       update_ui
       view.invalidate
@@ -169,6 +177,8 @@ module TT::Plugins::BitmapToMesh
       @ip_mouse.pick(view, x, y)
       view.tooltip = @ip_mouse.tooltip
       update_dib_render_transformation
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     ensure
       view.invalidate
       update_ui
@@ -176,6 +186,8 @@ module TT::Plugins::BitmapToMesh
 
     def onLButtonDown(flags, x, y, view)
       @leaders.any? { |_, leader| leader.onLButtonDown(flags, x, y, view) }
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     def onLButtonUp(flags, x, y, view)
@@ -192,6 +204,8 @@ module TT::Plugins::BitmapToMesh
       when State::PICK_HEIGHT
         generate_mesh
       end
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     ensure
       view.invalidate
       update_ui
@@ -201,6 +215,8 @@ module TT::Plugins::BitmapToMesh
       if defined?(Sketchup::ImageRep)
         @leaders.any? { |_, leader| leader.onSetCursor }
       end
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     # TODO: Rename this method to something more appropriate.
@@ -251,12 +267,16 @@ module TT::Plugins::BitmapToMesh
         # Leaders
         @leaders.each { |_, leader| leader.draw(view) }
       end
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     def getExtents
       bounds = Geom::BoundingBox.new
       get_bounding_box.points.each { |point| bounds.add(point) }
       bounds
+    rescue Exception => error
+      ERROR_REPORTER.handle(error)
     end
 
     private

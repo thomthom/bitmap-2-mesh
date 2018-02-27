@@ -60,6 +60,7 @@ module TT::Plugins::BitmapToMesh
 
 
   def self.bitmap_to_mesh_tool
+    raise 'Testing error reporter'
     if defined?(Sketchup::ImageRep)
       filetypes = %w[bmp jpg jpeg png psd tif tga]
       filter = filetypes.map { |filetype| "*.#{filetype}" }.join(';')
@@ -73,6 +74,8 @@ module TT::Plugins::BitmapToMesh
     tool = PlaceMeshTool.new(bitmap)
     Sketchup.active_model.tools.push_tool(tool)
     tool
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 
@@ -81,6 +84,8 @@ module TT::Plugins::BitmapToMesh
     tool = PlaceMeshTool.new(bitmap, image)
     Sketchup.active_model.tools.push_tool(tool)
     tool
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 
@@ -111,6 +116,8 @@ module TT::Plugins::BitmapToMesh
       }
     }
     model.commit_operation
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
   end
 
 

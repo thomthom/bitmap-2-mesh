@@ -29,12 +29,13 @@ module BitmapToMesh
 
 
   unless file_loaded?(__FILE__)
-    loader = File.join(PATH, 'core')
+    loader = File.join(PATH, 'bootstrap')
     ex = SketchupExtension.new(PLUGIN_NAME, loader)
     ex.description = 'Generates 2D and 3D mesh from bitmaps.'
     ex.version     = PLUGIN_VERSION
     ex.copyright   = 'Thomas Thomassen © 2010-2018'
     ex.creator     = 'Thomas Thomassen (thomas@thomthom.net)'
+    @extension = ex
     Sketchup.register_extension(ex, true)
   end
 

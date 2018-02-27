@@ -25,7 +25,7 @@ module TT::Plugins::BitmapToMesh
     SMOOTH_AND_SOFTEN = AUTO_SOFTEN | SMOOTH_SOFT_EDGES
 
 
-    def generate(entities, bitmap, material = nil, transformation = IDENTITY)
+    def generate(entities, bitmap, material = nil, transformation = IDENTITY, solid: false)
       model = entities.model
 
       bitmap_width = bitmap.width # Cache - avoid repeated method call.
@@ -106,11 +106,40 @@ module TT::Plugins::BitmapToMesh
       group.transformation = transformation
       group.entities.fill_from_mesh(mesh, true, SMOOTH_AND_SOFTEN, material)
       log "> Filling mesh took: #{Time.now - t}s"
+      make_solid(group.entities, bitmap, mesh) if solid
       log "Total time: #{Time.now - start_time}s"
       group
     end
 
     private
+
+    def make_solid(entities, bitmap, mesh)
+      t = Time.now
+      # Floor
+      bounds = entities.parent.bounds
+      min = bounds.min
+      max = bounds.max
+      points = [
+        Geom::Point3d.new(min.x, min.y, 0),
+        Geom::Point3d.new(max.x, min.y, 0),
+        Geom::Point3d.new(max.x, max.y, 0),
+        Geom::Point3d.new(min.x, max.y, 0),
+      ]
+      entities.add_face(points)
+      # Walls
+      points = mesh.points
+      w = bitmap.width
+      h = bitmap.height
+      indicies = [0, w - 1, (h - 1) * w, (w * h) - 1]
+      indicies.each { |i|
+        pt1 = points[i]
+        pt2 = pt1.clone
+        pt2.z = 0
+        edge = entities.add_line(pt1, pt2)
+        edge.find_faces
+      }
+      log "> Making mesh solid took: #{Time.now - t}s"
+    end
 
     def log(*args)
       @stdout.send(:puts, *args)

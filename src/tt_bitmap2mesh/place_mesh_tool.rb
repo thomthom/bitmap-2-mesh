@@ -249,6 +249,15 @@ module TT::Plugins::BitmapToMesh
       end
     end
 
+    def getMenu(menu)
+      id = menu.add_item('Solid Heightmap') {
+        Settings.solid_heightmap = !Settings.solid_heightmap?
+      }
+      menu.set_validation_proc(id)  {
+        Settings.solid_heightmap? ? MF_CHECKED : MF_ENABLED
+      }
+    end
+
     def draw(view)
       @ip_mouse.draw(view) if @ip_mouse.valid?
 
@@ -388,12 +397,13 @@ module TT::Plugins::BitmapToMesh
       tr_axes = Geom::Transformation.axes(box.origin, x_axis, y_axis, z_axis)
       transformation = tr_axes * tr_scaling
 
+      solid = Settings.solid_heightmap?
       model = Sketchup.active_model
       model.start_operation('Mesh From Heightmap', true)
       heightmap = HeightmapMesh.new
       material = get_or_create_material(model, @image, @bitmap)
       group = heightmap.generate(model.active_entities, sampled_bitmap,
-                                 material, transformation)
+                                 material, transformation, solid: solid)
       model.commit_operation
       # Once the mesh is generated the tool is popped from the stack and
       # returned to the previous tool.

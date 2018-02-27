@@ -18,6 +18,16 @@ module TT::Plugins::BitmapToMesh
     end
 
 
+    @solid_heightmap = self.read("SolidHeightmap", false)
+    def self.solid_heightmap?
+      @solid_heightmap
+    end
+    def self.solid_heightmap=(boolean)
+      @solid_heightmap = boolean ? true : false
+      self.write("SolidHeightmap", @solid_heightmap)
+    end
+
+
     # TT::Plugins::BitmapToMesh::Settings.debug_mode = true
     @debug_mode = self.read("DebugMode", false)
     def self.debug_mode?

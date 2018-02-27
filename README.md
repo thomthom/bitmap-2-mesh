@@ -35,7 +35,13 @@ careful with the bitmap sizes.
 
 ## Requirements
 
-* [TT_Lib² — 2.7.0](https://extensions.sketchup.com/content/tt_lib%C2%B2)
+### Recommended
+
+* SketchUp 2018 or newer
+
+### Limited Compatibility
+
+* SketchUp 2014 to SketchUp 2017
 
 
 ## Related Links

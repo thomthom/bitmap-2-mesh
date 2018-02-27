@@ -21,7 +21,7 @@ module BitmapToMesh
   # Plugin information
   PLUGIN_ID       = File.basename(__FILE__, '.*').freeze
   PLUGIN_NAME     = 'Bitmap to Mesh'.freeze
-  PLUGIN_VERSION  = '0.6.0'.freeze
+  PLUGIN_VERSION  = '1.0.0'.freeze
 
   # Resource paths
   PATH_ROOT     = File.dirname(file).freeze

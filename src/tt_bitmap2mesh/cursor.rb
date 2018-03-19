@@ -5,8 +5,6 @@
 #
 #-------------------------------------------------------------------------------
 
-require 'TT_Lib2/core.rb'
-
 module TT::Plugins::BitmapToMesh
   module Cursor
 

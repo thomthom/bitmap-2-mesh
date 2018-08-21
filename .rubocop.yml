@@ -1,0 +1,28 @@
+require: rubocop-sketchup
+
+AllCops:
+  DisabledByDefault: true
+  SketchUp:
+    SourcePath: src
+    TargetSketchUpVersion: 2014
+
+SketchupDeprecations:
+  Enabled: true
+
+SketchupPerformance:
+  Enabled: true
+
+SketchupRequirements:
+  Enabled: true
+
+SketchupSuggestions:
+  Enabled: true
+
+SketchupSuggestions/Compatibility:
+  Exclude:
+  - src/tt_bitmap2mesh/error_reporter/**/*
+  - src/tt_bitmap2mesh/helpers/image.rb
+  - src/tt_bitmap2mesh/helpers/image_rep.rb
+  - src/tt_bitmap2mesh/image/image_rep.rb
+  - src/tt_bitmap2mesh/bitmap.rb
+  - src/tt_bitmap2mesh/place_mesh_tool.rb

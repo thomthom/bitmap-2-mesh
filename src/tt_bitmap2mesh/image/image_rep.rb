@@ -12,11 +12,18 @@ module TT::Plugins::BitmapToMesh
   # Interface to expose ImageRep functionality in similar fashion to DIB.
   class ImageRep
 
+    class InvalidFileError < StandardError; end
+
     def initialize(source)
       if source.is_a?(String)
         @image_rep = Sketchup::ImageRep.new(source)
       elsif defined?(Sketchup::ImageRep) && source.is_a?(Sketchup::ImageRep)
         @image_rep = source
+      end
+      # This can happen when the file type/format/version is not supported or
+      # corrupted. (Issue #5)
+      if @image_rep.size.zero?
+        raise InvalidFileError, 'Unable to load file'
       end
       # The rows from ImageRep needs to be reversed in order to be compatible
       # with DIB.

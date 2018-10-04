@@ -6,6 +6,7 @@
 #-------------------------------------------------------------------------------
 
 require 'tt_bitmap2mesh/helpers/image'
+require 'tt_bitmap2mesh/image/image_rep'
 require 'tt_bitmap2mesh/debug'
 require 'tt_bitmap2mesh/bitmap'
 require 'tt_bitmap2mesh/place_mesh_tool'
@@ -49,6 +50,8 @@ module TT::Plugins::BitmapToMesh
     tool = PlaceMeshTool.new(bitmap)
     Sketchup.active_model.tools.push_tool(tool)
     tool
+  rescue ImageRep::InvalidFileError
+    UI.messagebox('Unable to load image. Unrecognized format.')
   rescue Exception => error
     ERROR_REPORTER.handle(error)
   end

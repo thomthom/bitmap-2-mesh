@@ -36,6 +36,7 @@ module TT::Plugins::BitmapToMesh
       num_polygons = (bitmap_width - 1) * (bitmap_height - 1) * 2
       num_points = bitmap_width * bitmap_height
 
+      log "SketchUp #{Sketchup.version}"
       log "Bitmap To Mesh: (#{bitmap.provider})"
       log "> Pixels: #{num_points} (#{bitmap_width}x#{bitmap_height})"
       log "> Vertices: #{num_points}"

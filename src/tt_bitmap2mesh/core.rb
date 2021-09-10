@@ -29,7 +29,8 @@ module TT::Plugins::BitmapToMesh
       if selection.length == 1 && selection[0].is_a?(Sketchup::Image)
         image = selection[0]
         context_menu.add_item('Mesh From Heightmap') { self.heightmap_to_mesh(image) }
-        context_menu.add_item('Mesh From Bitmap')    { self.image_to_mesh(image) }
+        context_menu.add_item('Mesh From Bitmap')    { self.image_to_mesh(image, use_builder: false) }
+        context_menu.add_item('Mesh From Bitmap (Builder)')    { self.image_to_mesh(image) }
       end
     }
     file_loaded(__FILE__)
@@ -67,13 +68,35 @@ module TT::Plugins::BitmapToMesh
   end
 
 
-  def self.image_to_mesh(image)
+  # @param [Sketchup::Image] image
+  # @param [Boolean] use_builder
+  def self.image_to_mesh(image, use_builder: true)
+    t = Time.now
     bitmap = Bitmap.from_image(image)
+    puts "> Bitmap from image took: #{Time.now - t}s)"
     model = Sketchup.active_model
+    t = Time.now
     model.start_operation('Mesh From Bitmap', true)
     group = model.active_entities.add_group
     group.description = 'Mesh from Bitmap'
     group.transform!(Image.transformation(image))
+    entities = group.entities
+    if entities.respond_to?(:build) && use_builder
+      entities.build do |builder|
+        build_faces(bitmap, builder)
+      end
+    else
+      build_faces(bitmap, entities)
+    end
+    model.commit_operation
+    puts "> Image to mesh took: #{Time.now - t}s (Builder: #{use_builder})"
+  rescue Exception => error
+    ERROR_REPORTER.handle(error)
+  end
+
+  # @param [Bitmap] bitmap
+  # @param [Sketchup::Entities, Sketchup::EntitiesBuilder] builder
+  def self.build_faces(bitmap, builder)
     bitmap.height.times { |y|
       bitmap.width.times { |x|
         index = (bitmap.width * y) + x
@@ -84,16 +107,13 @@ module TT::Plugins::BitmapToMesh
           [x + 1, y + 1, 0],
           [x,     y + 1, 0]
         ]
-        face = group.entities.add_face(points)
+        face = builder.add_face(points)
         # Ensure face's front side is oriented upwards. SketchUp will try to
         # force it to point downwards - preparing it to be push-pulled.
         face.reverse! unless face.normal.samedirection?(Z_AXIS)
         face.material = color
       }
     }
-    model.commit_operation
-  rescue Exception => error
-    ERROR_REPORTER.handle(error)
   end
 
 

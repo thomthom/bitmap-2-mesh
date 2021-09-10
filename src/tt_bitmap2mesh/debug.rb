@@ -7,8 +7,9 @@
 
 module TT::Plugins::BitmapToMesh
 
-  # debug = Sketchup.read_default(PLUGIN_ID, 'DebugMode', false)
-  debug = false
+  # Sketchup.read_default(TT::Plugins::BitmapToMesh::PLUGIN_ID, 'DebugMode', false)
+  # Sketchup.write_default(TT::Plugins::BitmapToMesh::PLUGIN_ID, 'DebugMode', true)
+  debug = Sketchup.read_default(PLUGIN_ID, 'DebugMode', false)
   if debug
     PATH_SOLUTION = File.expand_path( File.join(PATH_ROOT, '..') )
     PATH_PROFILE_TESTS = File.join(PATH_SOLUTION, 'profiling')
@@ -25,7 +26,7 @@ module TT::Plugins::BitmapToMesh
 
     # Build debug menus and toolbars.
     unless file_loaded?('B2M::Debug::UI')
-      menu = UI.menu('Plugins').add_submenu("#{PLUGIN_NAME} Debug Tools")
+      menu = UI.menu('Plugins').add_submenu("#{PLUGIN_NAME} Debug Tools (BM)")
 
       # Generate menus for profiling tests.
       menu_profile = menu.add_submenu("Profile…")

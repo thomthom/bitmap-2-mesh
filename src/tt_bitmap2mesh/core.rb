@@ -70,10 +70,10 @@ module TT::Plugins::BitmapToMesh
 
   # @param [Sketchup::Image] image
   # @param [Boolean] use_builder
-  def self.image_to_mesh(image, use_builder: true)
+  def self.image_to_mesh(image, use_builder: true, verbose: false)
     t = Time.now
     bitmap = Bitmap.from_image(image)
-    puts "> Bitmap from image took: #{Time.now - t}s)"
+    puts "> Bitmap from image took: #{Time.now - t}s)" if verbose
     model = Sketchup.active_model
     t = Time.now
     model.start_operation('Mesh From Bitmap', true)
@@ -89,7 +89,7 @@ module TT::Plugins::BitmapToMesh
       build_faces(bitmap, entities)
     end
     model.commit_operation
-    puts "> Image to mesh took: #{Time.now - t}s (Builder: #{use_builder})"
+    puts "> Image to mesh took: #{Time.now - t}s (Builder: #{use_builder})" if verbose
   rescue Exception => error
     ERROR_REPORTER.handle(error)
   end

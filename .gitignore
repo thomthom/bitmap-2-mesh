@@ -2,3 +2,5 @@
 AutoSave*.skp
 
 *.rbz
+
+Gemfile.lock

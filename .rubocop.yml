@@ -20,6 +20,9 @@ SketchupRequirements:
 SketchupSuggestions:
   Enabled: true
 
+SketchupBugs:
+  Enabled: true
+
 SketchupSuggestions/Compatibility:
   Exclude:
   - src/tt_bitmap2mesh/error_reporter/**/*

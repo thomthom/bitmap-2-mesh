@@ -2,7 +2,7 @@ require: rubocop-sketchup
 
 AllCops:
   DisabledByDefault: true
-  DisplayStyleGuide: false
+  DisplayStyleGuide: true
   ExtraDetails: false
   SketchUp:
     SourcePath: src

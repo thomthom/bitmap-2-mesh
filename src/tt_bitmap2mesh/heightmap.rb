@@ -136,6 +136,8 @@ module TT::Plugins::BitmapToMesh
         pt2 = pt1.clone
         pt2.z = 0
         edge = entities.add_line(pt1, pt2)
+        next if edge.nil?
+
         edge.find_faces
       }
       log "> Making mesh solid took: #{Time.now - t}s"
